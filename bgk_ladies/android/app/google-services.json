@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "685895588413",
+    "project_id": "bgk-ladies-attendance",
+    "storage_bucket": "bgk-ladies-attendance.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:685895588413:android:b3c4b44dd7dd0c185fe854",
+        "android_client_info": {
+          "package_name": "com.bmala.bgkladies"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "685895588413-1q8lq05kqtiptoqa809fg4ao1sftm0aq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bmala.bgkladies",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "685895588413-lidjqac0f2mu67j9rij4jh6vvfmdoj0a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDlcG2v5fGA8OOQIMPiUWpbkDkaUf1OcIY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "685895588413-lidjqac0f2mu67j9rij4jh6vvfmdoj0a.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "685895588413-dd6aejj3a6rqkufirdhmo06cjro4eiec.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bmala.bgkladies"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:685895588413:android:75d025b3d87966c35fe854",
+        "android_client_info": {
+          "package_name": "com.bmala.bgkladies.bgk_ladies"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "685895588413-lidjqac0f2mu67j9rij4jh6vvfmdoj0a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDlcG2v5fGA8OOQIMPiUWpbkDkaUf1OcIY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "685895588413-lidjqac0f2mu67j9rij4jh6vvfmdoj0a.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "685895588413-dd6aejj3a6rqkufirdhmo06cjro4eiec.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bmala.bgkladies"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
