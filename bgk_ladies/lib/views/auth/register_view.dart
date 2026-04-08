@@ -1,12 +1,13 @@
 import 'dart:developer' as devtools;
 
-import 'package:bgk_ladies/constants/routes.dart';
+import 'package:bgk_ladies/bloc/bloc_event.dart';
+import 'package:bgk_ladies/bloc/bloc_func.dart';
+import 'package:bgk_ladies/bloc/bloc_states.dart';
 import 'package:bgk_ladies/enums/markaz_enum.dart';
 import 'package:bgk_ladies/enums/user_role_enum.dart';
-import 'package:bgk_ladies/models/user_model.dart';
-import 'package:bgk_ladies/repo/auth_repo.dart';
-import 'package:bgk_ladies/utilites/hash_util.dart';
+import 'package:bgk_ladies/utilites/loading/loading_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -34,134 +35,160 @@ class _RegisterViewState extends State<RegisterView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Register")),
-      body: Center(
-        child: Column(
+    return BlocConsumer<BlocFunc, BlocState>(
+      listener: (context, state) {
+        if (state is BlocStateLoggedIn) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Registration successful!")));
+          context.read<BlocFunc>().add(const BlocEventNavigateToLogin());
+        } else if (state is BlocStateLoggedOut && state.exception != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Registration failed: ${state.exception}")),
+          );
+        }
+      },
+      builder: (context, state) {
+        return Stack(
           children: [
-            TextField(
-              controller: itsNumberController,
-              keyboardType: TextInputType.number,
-              maxLength: 8,
-              decoration: InputDecoration(
-                hint: Text("Enter your ITS number"),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            // DropdownMenu(
-            //   dropdownMenuEntries: roleEntries,
-            //   label: Text("Select your role"),
-            //   initialSelection: roleEntries.first.value,
-            //   onSelected: (value) {
-            //     // Handle role selection
-            //   },
-            // ),
-            DropdownButtonFormField(
-              items: roleEntries,
-              onChanged: (value) {
-                setState(() {
-                  _selectedRole = UserRoleEnum.values.firstWhere(
-                    (role) => role.name == value,
-                  );
-                });
-              },
-              decoration: InputDecoration(
-                label: Text("Select your role"),
-                border: OutlineInputBorder(),
-                prefix: Icon(Icons.person),
-              ),
-            ),
-            if (_selectedRole == UserRoleEnum.onGroundAdmin)
-              DropdownButtonFormField(
-                items: MarkazEnum.values
-                    .map(
-                      (markaz) => DropdownMenuItem<String>(
-                        value: markaz.name,
-                        child: Text(markaz.displayName),
+            Scaffold(
+              appBar: AppBar(title: Text("Register")),
+              body: Center(
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: itsNumberController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 8,
+                      decoration: InputDecoration(
+                        hint: Text("Enter your ITS number"),
+                        border: OutlineInputBorder(),
                       ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedMarkaz = MarkazEnum.values.firstWhere(
-                      (markaz) => markaz.name == value,
-                    );
-                  });
-                },
-                decoration: InputDecoration(
-                  label: Text("Select your markaz"),
-                  border: OutlineInputBorder(),
-                  prefix: Icon(Icons.location_on),
+                    ),
+                    // DropdownMenu(
+                    //   dropdownMenuEntries: roleEntries,
+                    //   label: Text("Select your role"),
+                    //   initialSelection: roleEntries.first.value,
+                    //   onSelected: (value) {
+                    //     // Handle role selection
+                    //   },
+                    // ),
+                    DropdownButtonFormField(
+                      items: roleEntries,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedRole = UserRoleEnum.values.firstWhere(
+                            (role) => role.name == value,
+                          );
+                        });
+                      },
+                      decoration: InputDecoration(
+                        label: Text("Select your role"),
+                        border: OutlineInputBorder(),
+                        prefix: Icon(Icons.person),
+                      ),
+                    ),
+                    if (_selectedRole == UserRoleEnum.onGroundAdmin)
+                      DropdownButtonFormField(
+                        items: MarkazEnum.values
+                            .map(
+                              (markaz) => DropdownMenuItem<String>(
+                                value: markaz.name,
+                                child: Text(markaz.displayName),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedMarkaz = MarkazEnum.values.firstWhere(
+                              (markaz) => markaz.name == value,
+                            );
+                          });
+                        },
+                        decoration: InputDecoration(
+                          label: Text("Select your markaz"),
+                          border: OutlineInputBorder(),
+                          prefix: Icon(Icons.location_on),
+                        ),
+                      ),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hint: Text("Enter your password"),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (_selectedRole == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Please select a role")),
+                          );
+                          return;
+                        }
+                        if (_selectedRole == UserRoleEnum.onGroundAdmin &&
+                            _selectedMarkaz == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Please select a markaz")),
+                          );
+                          return;
+                        }
+                        if (itsNumberController.text.isEmpty ||
+                            passwordController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Please fill all fields")),
+                          );
+                          return;
+                        }
+                        if (int.tryParse(itsNumberController.text) == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("ITS number must be valid")),
+                          );
+                          return;
+                        }
+                        if (_selectedMarkaz != null &&
+                            _selectedRole == UserRoleEnum.onGroundAdmin) {
+                          devtools.log(
+                            "Selected Markaz: ${_selectedMarkaz!.name}",
+                          );
+                        } else {
+                          devtools.log("No Markaz selected");
+                          _selectedMarkaz = null;
+                        }
+                        context.read<BlocFunc>().add(
+                          BlocEventRegister(
+                            itsNumber: int.parse(itsNumberController.text),
+                            password: passwordController.text,
+                            role: _selectedRole!,
+                            markaz: _selectedMarkaz,
+                          ),
+                        );
+                      },
+                      child: Text("Register"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<BlocFunc>().add(
+                          const BlocEventNavigateToLogin(),
+                        );
+                      },
+                      child: Text("To Login"),
+                    ),
+                  ],
                 ),
               ),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hint: Text("Enter your password"),
-                border: OutlineInputBorder(),
+            ),
+            if (state.isLoading)
+              const Opacity(
+                opacity: 0.8,
+                child: ModalBarrier(dismissible: false, color: Colors.black),
               ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (_selectedRole == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Please select a role")),
-                  );
-                  return;
-                }
-                if (_selectedRole == UserRoleEnum.onGroundAdmin &&
-                    _selectedMarkaz == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Please select a markaz")),
-                  );
-                  return;
-                }
-                if (itsNumberController.text.isEmpty ||
-                    passwordController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Please fill all fields")),
-                  );
-                  return;
-                }
-                if (int.tryParse(itsNumberController.text) == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("ITS number must be valid")),
-                  );
-                  return;
-                }
-                if (_selectedMarkaz != null &&
-                    _selectedRole == UserRoleEnum.onGroundAdmin) {
-                  devtools.log("Selected Markaz: ${_selectedMarkaz!.name}");
-                } else {
-                  devtools.log("No Markaz selected");
-                  _selectedMarkaz = null;
-                }
-
-                await AuthRepository().register(
-                  UserModel(
-                    itsNumber: int.parse(itsNumberController.text),
-                    passwordHash: hashPassword(passwordController.text),
-                    role: _selectedRole!,
-                    markaz: _selectedMarkaz,
-                  ),
-                );
-                devtools.log("User registered");
-              },
-              child: Text("Register"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(
-                  context,
-                ).pushNamedAndRemoveUntil(loginRoute, (route) => false);
-              },
-              child: Text("To Login"),
-            ),
+            if (state.isLoading) const Center(child: LoadingDialog()),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }

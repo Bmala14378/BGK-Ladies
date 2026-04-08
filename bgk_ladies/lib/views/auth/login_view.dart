@@ -1,8 +1,13 @@
+// ignore: unused_import
 import 'dart:developer' as devtools;
 
-import 'package:bgk_ladies/constants/routes.dart';
-import 'package:bgk_ladies/repo/auth_repo.dart';
+import 'package:bgk_ladies/bloc/bloc_event.dart';
+import 'package:bgk_ladies/bloc/bloc_func.dart';
+import 'package:bgk_ladies/bloc/bloc_states.dart';
+import 'package:bgk_ladies/repo/auth_exception.dart';
+import 'package:bgk_ladies/utilites/loading/loading_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -16,67 +21,116 @@ class _LoginViewState extends State<LoginView> {
   TextEditingController passwordController = TextEditingController();
 
   @override
+  initState() {
+    super.initState();
+    itsNumberController = TextEditingController();
+    passwordController = TextEditingController();
+  }
+
+  @override
+  dispose() {
+    itsNumberController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Login")),
-      body: Center(
-        child: Column(
+    return BlocConsumer<BlocFunc, BlocState>(
+      listener: (context, state) {
+        //TODO: Handle Error's Display
+        if (state is BlocStateLoggedOut &&
+            state.exception == InvalidCredentialException()) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Login failed: Invalid credentials")),
+          );
+        } else if (state is BlocStateLoggedOut &&
+            state.exception == UserNotFoundException()) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Login failed: User not found")),
+          );
+        } else if (state is BlocStateLoggedOut && state.exception != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Login failed: ${state.exception}")),
+          );
+        }
+      },
+      builder: (context, state) {
+        return Stack(
           children: [
-            TextField(
-              controller: itsNumberController,
-              keyboardType: TextInputType.number,
-              maxLength: 8,
-              decoration: InputDecoration(
-                hint: Text("Enter your its number"),
-                border: OutlineInputBorder(),
+            Scaffold(
+              appBar: AppBar(title: Text("Login")),
+              body: Center(
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: itsNumberController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 8,
+                      decoration: InputDecoration(
+                        hint: Text("Enter your its number"),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hint: Text("Enter your password"),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (itsNumberController.text.isEmpty ||
+                            passwordController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Please fill in all fields"),
+                            ),
+                          );
+                          return;
+                        }
+                        if (itsNumberController.text.length != 8) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("ITS number must be 8 digits"),
+                            ),
+                          );
+                          return;
+                        }
+                        context.read<BlocFunc>().add(
+                          BlocEventLogIn(
+                            itsNumber: int.parse(itsNumberController.text),
+                            password: passwordController.text,
+                          ),
+                        );
+                        // devtools.log("User:");
+                      },
+                      child: Text("Login"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<BlocFunc>().add(
+                          const BlocEventNavigateToRegister(),
+                        );
+                      },
+                      child: Text("To Register"),
+                    ),
+                  ],
+                ),
               ),
             ),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hint: Text("Enter your password"),
-                border: OutlineInputBorder(),
+            if (state.isLoading)
+              const Opacity(
+                opacity: 0.5,
+                child: ModalBarrier(dismissible: false, color: Colors.black),
               ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (itsNumberController.text.isEmpty ||
-                    passwordController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Please fill in all fields")),
-                  );
-                  return;
-                }
-                if (itsNumberController.text.length != 8) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("ITS number must be 8 digits")),
-                  );
-                  return;
-                }
-                final user = await AuthRepository().login(
-                  int.parse(itsNumberController.text),
-                  passwordController.text,
-                );
-                devtools.log(
-                  "User: ${user?.itsNumber}, ${user?.markaz}, ${user?.role}",
-                );
-                SnackBar(content: Text("Login successful"));
-              },
-              child: Text("Login"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(
-                  context,
-                ).pushNamedAndRemoveUntil(registerRoute, (route) => false);
-              },
-              child: Text("To Register"),
-            ),
+            if (state.isLoading) const Center(child: LoadingDialog()),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }

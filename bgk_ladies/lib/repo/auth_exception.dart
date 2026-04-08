@@ -1,6 +1,7 @@
 class UserNotFoundException implements Exception {}
 
 class InvalidPasswordException implements Exception {}
+class InvalidCredentialException implements Exception {}
 
 class TooManyRequestsException implements Exception {}
 

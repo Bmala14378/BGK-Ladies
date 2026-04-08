@@ -9,7 +9,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AuthRepository {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<UserModel?> login(int itsNumber, String password) async {
+  Future<UserModel?> login({
+    required int itsNumber,
+    required String password,
+  }) async {
     try {
       String passwordHash = hashPassword(password);
       DocumentSnapshot doc = await _db
@@ -30,10 +33,13 @@ class AuthRepository {
         devtools.log("User with ITS number $itsNumber not found in database");
         throw Exception(UserNotFoundException);
       }
-    } catch (e) {
-      devtools.log("Error during login: $e");
-      throw Exception(UnknownAuthException);
+    } on Exception catch (e) {
+      if (e.toString().contains("UserNotFoundException") ||
+          e.toString().contains("InvalidPasswordException")) {
+        throw InvalidCredentialException();
+      }
     }
+    return null;
   }
 
   Future<void> register(UserModel user) async {
@@ -52,5 +58,15 @@ class AuthRepository {
       devtools.log("Error during registration: $e");
       throw Exception(UnknownAuthException);
     }
+  }
+
+  Future<void> logOut() async {
+    //TODO: Logout Function
+    return;
+  }
+
+  Future<UserModel?> getCurrentUser() async {
+    //TODO: Current User Function
+    return null;
   }
 }
