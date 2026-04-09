@@ -1,11 +1,12 @@
 // ignore: unused_import
 import 'dart:developer' as devtools;
 
-import 'package:bgk_ladies/bloc/bloc_event.dart';
-import 'package:bgk_ladies/bloc/bloc_func.dart';
-import 'package:bgk_ladies/bloc/bloc_states.dart';
+import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
+import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
+import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
 import 'package:bgk_ladies/repo/auth_exception.dart';
-import 'package:bgk_ladies/utilites/loading/loading_dialog.dart';
+import 'package:bgk_ladies/utilites/dialog/genrric_dialog.dart';
+import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -36,22 +37,40 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<BlocFunc, BlocState>(
+    return BlocConsumer<AuthBlocFunc, AuthBlocState>(
       listener: (context, state) {
         //TODO: Handle Error's Display
-        if (state is BlocStateLoggedOut &&
+        if (state is AuthBlocStateLoggedOut &&
             state.exception == InvalidCredentialException()) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Login failed: Invalid credentials")),
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(content: Text("Login failed: Invalid credentials")),
+          // );
+          GenericDialog.showGenericDialog(
+            context: context,
+            title: "Login Failed",
+            content: "Invalid credentials. Please try again.",
+            optionsBuilder: () => {"OK": null},
           );
-        } else if (state is BlocStateLoggedOut &&
+        } else if (state is AuthBlocStateLoggedOut &&
             state.exception == UserNotFoundException()) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Login failed: User not found")),
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(content: Text("Login failed: User not found")),
+          // );
+          GenericDialog.showGenericDialog(
+            context: context,
+            title: "Login Failed",
+            content: "User not found. Please check your ITS number.",
+            optionsBuilder: () => {"OK": null},
           );
-        } else if (state is BlocStateLoggedOut && state.exception != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Login failed: ${state.exception}")),
+        } else if (state is AuthBlocStateLoggedOut && state.exception != null) {
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(content: Text("Login failed: ${state.exception}")),
+          // );
+          GenericDialog.showGenericDialog(
+            context: context,
+            title: "Login Failed",
+            content: "An error occurred: ${state.exception}",
+            optionsBuilder: () => {"OK": null},
           );
         }
       },
@@ -100,8 +119,8 @@ class _LoginViewState extends State<LoginView> {
                           );
                           return;
                         }
-                        context.read<BlocFunc>().add(
-                          BlocEventLogIn(
+                        context.read<AuthBlocFunc>().add(
+                          AuthBlocEventLogIn(
                             itsNumber: int.parse(itsNumberController.text),
                             password: passwordController.text,
                           ),
@@ -110,14 +129,14 @@ class _LoginViewState extends State<LoginView> {
                       },
                       child: Text("Login"),
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<BlocFunc>().add(
-                          const BlocEventNavigateToRegister(),
-                        );
-                      },
-                      child: Text("To Register"),
-                    ),
+                    // ElevatedButton(
+                    //   onPressed: () {
+                    //     context.read<AuthBlocFunc>().add(
+                    //       const AuthBlocEventNavigateToRegister(),
+                    //     );
+                    //   },
+                    //   child: Text("To Register"),
+                    // ),
                   ],
                 ),
               ),

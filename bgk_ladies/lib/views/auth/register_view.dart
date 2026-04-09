@@ -1,11 +1,12 @@
 import 'dart:developer' as devtools;
 
-import 'package:bgk_ladies/bloc/bloc_event.dart';
-import 'package:bgk_ladies/bloc/bloc_func.dart';
-import 'package:bgk_ladies/bloc/bloc_states.dart';
+import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
+import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
+import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
 import 'package:bgk_ladies/enums/markaz_enum.dart';
 import 'package:bgk_ladies/enums/user_role_enum.dart';
-import 'package:bgk_ladies/utilites/loading/loading_dialog.dart';
+import 'package:bgk_ladies/utilites/dialog/genrric_dialog.dart';
+import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -35,16 +36,24 @@ class _RegisterViewState extends State<RegisterView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<BlocFunc, BlocState>(
+    return BlocConsumer<AuthBlocFunc, AuthBlocState>(
       listener: (context, state) {
-        if (state is BlocStateLoggedIn) {
+        if (state is AuthBlocStateLoggedIn) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text("Registration successful!")));
-          context.read<BlocFunc>().add(const BlocEventNavigateToLogin());
-        } else if (state is BlocStateLoggedOut && state.exception != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Registration failed: ${state.exception}")),
+          context.read<AuthBlocFunc>().add(
+            const AuthBlocEventNavigateToLogin(),
+          );
+        } else if (state is AuthBlocStateLoggedOut && state.exception != null) {
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(content: Text("Registration failed: ${state.exception}")),
+          // );
+          GenericDialog.showGenericDialog(
+            context: context,
+            title: "Registration Failed",
+            content: "An error occurred during registration. Please try again.",
+            optionsBuilder: () => {"OK": null},
           );
         }
       },
@@ -157,8 +166,8 @@ class _RegisterViewState extends State<RegisterView> {
                           devtools.log("No Markaz selected");
                           _selectedMarkaz = null;
                         }
-                        context.read<BlocFunc>().add(
-                          BlocEventRegister(
+                        context.read<AuthBlocFunc>().add(
+                          AuthBlocEventRegister(
                             itsNumber: int.parse(itsNumberController.text),
                             password: passwordController.text,
                             role: _selectedRole!,
@@ -168,14 +177,14 @@ class _RegisterViewState extends State<RegisterView> {
                       },
                       child: Text("Register"),
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<BlocFunc>().add(
-                          const BlocEventNavigateToLogin(),
-                        );
-                      },
-                      child: Text("To Login"),
-                    ),
+                    // ElevatedButton(
+                    //   onPressed: () {
+                    //     context.read<AuthBlocFunc>().add(
+                    //       const AuthBlocEventNavigateToDash(),
+                    //     );
+                    //   },
+                    //   child: Text("Back"),
+                    // ),
                   ],
                 ),
               ),

@@ -11,9 +11,9 @@ class EventModel {
     this.isactive = true,
   });
 
-  factory EventModel.fromMap(Map<String, dynamic> map) {
+  factory EventModel.fromMap(Map<String, dynamic> map, String documentid) {
     return EventModel(
-      eventId: map[Vars.eventId_Var] ?? "",
+      eventId: documentid,
       eventName: map[Vars.eventName_Var] ?? "",
       isactive: map[Vars.isactive_Var] ?? true,
     );

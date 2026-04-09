@@ -1,9 +1,13 @@
-import 'package:bgk_ladies/bloc/bloc_event.dart';
-import 'package:bgk_ladies/bloc/bloc_func.dart';
-import 'package:bgk_ladies/bloc/bloc_states.dart';
+import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
+import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
+import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
+import 'package:bgk_ladies/bloc/event/event_bloc_events.dart';
+import 'package:bgk_ladies/bloc/event/event_bloc_func.dart';
 import 'package:bgk_ladies/firebase_options.dart';
 import 'package:bgk_ladies/repo/auth_repo.dart';
-import 'package:bgk_ladies/utilites/loading/loading_dialog.dart';
+import 'package:bgk_ladies/services/event_service.dart';
+import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
+import 'package:bgk_ladies/views/attend/event_management_view.dart';
 import 'package:bgk_ladies/views/auth/login_view.dart';
 import 'package:bgk_ladies/views/auth/register_view.dart';
 import 'package:bgk_ladies/views/dashboard_view.dart';
@@ -15,9 +19,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
-    BlocProvider(
-      create: (context) =>
-          BlocFunc(AuthRepository())..add(const BlocEventInitialize()),
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) =>
+              AuthBlocFunc(AuthRepository())
+                ..add(const AuthBlocEventInitialize()),
+        ),
+        BlocProvider(
+          create: (context) =>
+              EventBloc(EventService())..add(const EventBlocEventInitialize()),
+        ),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: "BGK Ladies",
@@ -26,6 +39,7 @@ void main() async {
           "/login": (context) => LoginView(),
           "/register": (context) => RegisterView(),
           "/dash": (context) => DashboardView(),
+          "/eventmgmt": (context) => EventManagementView(),
         },
         home: MainPg(),
       ),
@@ -38,17 +52,21 @@ class MainPg extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<BlocFunc, BlocState>(
+    return BlocBuilder<AuthBlocFunc, AuthBlocState>(
       builder: (context, state) {
         if (state.isLoading) {
           return LoadingDialog();
-        } else if (state is BlocStateLoggedOut) {
+        } else if (state is AuthBlocStateLoggedOut) {
           return LoginView();
-        } else if (state is BlocStateNavigatingToRegister) {
+        } else if (state is AuthBlocStateNavigatingToRegister) {
           return RegisterView();
-        } else if (state is BlocStateNavigatingToLogin) {
+        } else if (state is AuthBlocStateNavigatingToLogin) {
           return LoginView();
-        } else if (state is BlocStateLoggedIn) {
+        } else if (state is AuthBlocRegistered) {
+          return RegisterView();
+        } else if (state is AuthBlocStateLoggedIn) {
+          return DashboardView();
+        } else if (state is AuthBlocStateNavigatingToRegister) {
           return DashboardView();
         }
         return Center(child: Text("An Unexpected Error Occurred"));
