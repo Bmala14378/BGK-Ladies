@@ -1,13 +1,15 @@
-enum MarkazEnum { fakhriMarkaz, jamaliMarkaz, badriMarkaz }
+// ignore_for_file: constant_identifier_names
+
+enum MarkazEnum { FK, JM, BR }
 
 extension MarkazExtension on MarkazEnum {
   String get displayName {
     switch (this) {
-      case MarkazEnum.fakhriMarkaz:
+      case MarkazEnum.FK:
         return 'Fakhri Markaz';
-      case MarkazEnum.jamaliMarkaz:
+      case MarkazEnum.JM:
         return 'Jamali Markaz';
-      case MarkazEnum.badriMarkaz:
+      case MarkazEnum.BR:
         return 'Badri Markaz';
     }
   }

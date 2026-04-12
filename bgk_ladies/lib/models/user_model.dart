@@ -46,8 +46,7 @@ class UserModel {
       role == UserRoleEnum.groupleader;
 
   bool get canMarkAttendance =>
-      role == UserRoleEnum.superUser ||
-      role == UserRoleEnum.onGroundAdmin;
+      role == UserRoleEnum.superUser || role == UserRoleEnum.onGroundAdmin;
 
   bool get canViewReports =>
       role == UserRoleEnum.superUser ||

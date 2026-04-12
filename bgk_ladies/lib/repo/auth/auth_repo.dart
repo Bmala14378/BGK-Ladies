@@ -2,7 +2,7 @@ import 'dart:developer' as devtools;
 
 import 'package:bgk_ladies/constants/vars.dart';
 import 'package:bgk_ladies/models/user_model.dart';
-import 'package:bgk_ladies/repo/auth_exception.dart';
+import 'package:bgk_ladies/repo/auth/auth_exception.dart';
 import 'package:bgk_ladies/utilites/hash_util.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 

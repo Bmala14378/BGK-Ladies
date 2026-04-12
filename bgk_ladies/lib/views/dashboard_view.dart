@@ -1,11 +1,23 @@
+import 'dart:developer' as devtools;
+
 import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_func.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_state.dart';
+import 'package:bgk_ladies/bloc/member/member_bloc_events.dart';
+import 'package:bgk_ladies/bloc/member/member_bloc_func.dart';
+import 'package:bgk_ladies/bloc/member/member_bloc_states.dart';
 import 'package:bgk_ladies/constants/routes.dart';
-import 'package:bgk_ladies/models/event_model.dart';
+import 'package:bgk_ladies/enums/user_role_enum.dart';
+import 'package:bgk_ladies/models/member_model.dart';
+import 'package:bgk_ladies/models/user_model.dart';
 import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
+import 'package:bgk_ladies/views/attend/appoint_view.dart';
+import 'package:bgk_ladies/widgets/empty_state.dart';
+import 'package:bgk_ladies/widgets/event_card.dart';
+import 'package:bgk_ladies/widgets/quick_action_button.dart';
+import 'package:bgk_ladies/widgets/stat_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -15,9 +27,79 @@ class DashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authState = context.read<AuthBlocFunc>().state;
+    // ignore: unused_local_variable
+    final currentIts = (authState is AuthBlocStateLoggedIn)
+        ? authState.user.itsNumber
+        : null;
     final currentUser = authState is AuthBlocStateLoggedIn
         ? authState.user
         : null;
+
+    if (authState is AuthBlocStateLoggedIn) {
+      final memberBloc = context.read<MemberBloc>();
+      if (memberBloc.state is InitialMemberBlocState) {
+        memberBloc.add(MemberBlocEventInitialize(user: authState.user));
+      }
+    }
+    final memberState = context.watch<MemberBloc>().state;
+    if (currentUser?.role != UserRoleEnum.onGroundAdmin) {
+      if (memberState is LoadedMemberBlocState) {
+        // Use the pre-fetched profile directly from the state!
+        final myInfo = memberState.userProfile;
+        final totalMembers = memberState.members.length;
+        return DashboardViewWidget(
+          currentUser: currentUser!,
+          myInfo: myInfo!,
+          totalMembers: totalMembers,
+          eventId: context.read<EventBloc>().state is EventStateLoaded
+              ? (context.read<EventBloc>().state as EventStateLoaded)
+                    .activeEvents
+                    .first
+                    .eventId
+              : "",
+        );
+      } else if (memberState is MemberStateError) {
+        devtools.log(
+          "MemberBloc is still loading or failed to load. Current state: ${memberState.errorMessage}",
+        );
+        return const Scaffold(body: LoadingDialog());
+      } else {
+        devtools.log(
+          "MemberBloc is still loading. Current state: ${memberState.runtimeType}",
+        );
+        return const Scaffold(body: LoadingDialog());
+      }
+    } else {
+      // For onGroundAdmin, we might want to show a different dashboard or a loading state until we fetch necessary data.
+      // TODO: Placeholder for onGroundAdmin dashboard or attendance view
+      // return AttendanceView();
+      return const Scaffold(
+        body: Center(
+          child: Text(
+            "On-Ground Admin Dashboard is under construction.",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+      );
+    }
+  }
+}
+
+class DashboardViewWidget extends StatelessWidget {
+  final MemberModel myInfo;
+  final int totalMembers;
+  final UserModel currentUser;
+  final String eventId;
+  const DashboardViewWidget({
+    super.key,
+    required this.currentUser,
+    required this.myInfo,
+    required this.totalMembers,
+    required this.eventId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -39,6 +121,32 @@ class DashboardView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.purple.withAlpha(20),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.purple.withAlpha(50)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.purple.withAlpha(10),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  "Welcome Back, ${myInfo.name} !",
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
             const Text(
               "Quick Stats",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -46,18 +154,18 @@ class DashboardView extends StatelessWidget {
             const SizedBox(height: 10),
 
             // 1. Stats Ribbon (Horizontal Cards)
-            const Row(
+            Row(
               children: [
                 Expanded(
-                  child: _StatCard(
+                  child: StatCard(
                     label: "Total Members",
-                    value: "150",
+                    value: totalMembers.toString(),
                     icon: Icons.people,
                   ),
                 ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: _StatCard(
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: StatCard(
                     label: "Active Markaz",
                     value: "4",
                     icon: Icons.location_on,
@@ -65,28 +173,32 @@ class DashboardView extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 25),
+
+            // 2. Quick Actions (Conditional Buttons)
+            Text(
+              "Quick Actions",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
             Scrollable(
               axisDirection: AxisDirection.right,
               scrollBehavior: const ScrollBehavior().copyWith(
                 scrollbars: false,
               ),
               viewportBuilder: (context, position) {
-                return GridView(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 3, // Wider buttons
-                  ),
+                // GridView inside SingleChildScrollView requires shrinkWrap & NeverScrollableScrollPhysics
+                return GridView.count(
+                  crossAxisCount: 2, // 2 columns
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 1.7,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-
                   children: [
-                    if (currentUser!.canManageEvents)
-                      navButton(
-                        context: context,
-                        icon: const Icon(Icons.event),
+                    if (currentUser.canManageEvents)
+                      QuickActionButton(
+                        icon: Icons.event,
                         label: "Manage Events",
                         onPressed: () {
                           Navigator.pushNamed(context, eventManagementRoute);
@@ -94,40 +206,55 @@ class DashboardView extends StatelessWidget {
                       ),
 
                     if (currentUser.canViewReports)
-                      navButton(
+                      QuickActionButton(
                         //TODO: Implement reports view
-                        context: context,
-                        icon: const Icon(Icons.bar_chart),
+                        icon: Icons.bar_chart,
                         label: "View Reports",
                         onPressed: () {},
                       ),
 
+                    if (currentUser.canAppoint)
+                      QuickActionButton(
+                        icon: Icons.assignment_ind,
+                        label: "Appoint",
+                        onPressed: () {
+                          final memberState = context.read<MemberBloc>().state;
+
+                          if (memberState is LoadedMemberBlocState) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    AppointView(members: memberState.members),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Please wait, members are still loading...',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+
+                    if (currentUser.canMarkAttendance)
+                      QuickActionButton(
+                        //TODO: Implement attendance marking flow
+                        icon: Icons.check_circle,
+                        label: "Mark Attendance",
+                        onPressed: () {},
+                      ),
+
                     if (currentUser.canCreateUser)
-                      navButton(
-                        context: context,
-                        icon: const Icon(Icons.person_add),
+                      QuickActionButton(
+                        icon: Icons.person_add,
                         label: "Create User",
                         onPressed: () {
                           Navigator.pushNamed(context, registerRoute);
                         },
-                      ),
-
-                    if (currentUser.canAppoint)
-                      navButton(
-                        //TODO: Implement appointment flow
-                        context: context,
-                        icon: const Icon(Icons.assignment_ind),
-                        label: "Appoint",
-                        onPressed: () {},
-                      ),
-
-                    if (currentUser.canMarkAttendance)
-                      navButton(
-                        //TODO: Implement attendance marking flow
-                        context: context,
-                        icon: const Icon(Icons.check_circle),
-                        label: "Mark Attendance",
-                        onPressed: () {},
                       ),
                   ],
                 );
@@ -151,7 +278,7 @@ class DashboardView extends StatelessWidget {
                   final activeEvents = state.activeEvents;
 
                   if (activeEvents.isEmpty) {
-                    return _buildEmptyState();
+                    return buildEmptyState();
                   }
 
                   return ListView.builder(
@@ -160,7 +287,7 @@ class DashboardView extends StatelessWidget {
                     itemCount: activeEvents.length,
                     itemBuilder: (context, index) {
                       final event = activeEvents[index];
-                      return _EventCard(event: event);
+                      return EventCard(event: event);
                     },
                   );
                 }
@@ -172,109 +299,4 @@ class DashboardView extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildEmptyState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Column(
-        children: [
-          Icon(Icons.event_busy, color: Colors.grey, size: 40),
-          SizedBox(height: 10),
-          Text(
-            "No active events at the moment.",
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Custom widget for the Stats
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.purple.withAlpha(10),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.purple.withAlpha(30)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.purple),
-          const SizedBox(height: 5),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        ],
-      ),
-    );
-  }
-}
-
-// Custom widget for Event Items
-class _EventCard extends StatelessWidget {
-  final EventModel event; // Use your EventModel type here
-  const _EventCard({required this.event});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: const CircleAvatar(
-          backgroundColor: Colors.purple,
-          child: Icon(Icons.calendar_today, color: Colors.white, size: 20),
-        ),
-        title: Text(
-          event.eventName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: const Text("Tap to view details or mark attendance"),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () {
-          // Navigate to Attendance or Details screen
-        },
-      ),
-    );
-  }
-}
-
-Widget navButton({
-  required BuildContext context,
-  required String label,
-  required Icon icon,
-  required VoidCallback onPressed,
-}) {
-  return ElevatedButton.icon(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    ),
-    onPressed: onPressed,
-    icon: icon,
-    label: Text(label),
-  );
 }

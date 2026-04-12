@@ -3,7 +3,7 @@ import 'dart:developer' as devtools;
 import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
 import 'package:bgk_ladies/models/user_model.dart';
-import 'package:bgk_ladies/repo/auth_repo.dart';
+import 'package:bgk_ladies/repo/auth/auth_repo.dart';
 import 'package:bgk_ladies/utilites/hash_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

@@ -174,6 +174,10 @@ class _RegisterViewState extends State<RegisterView> {
                             markaz: _selectedMarkaz,
                           ),
                         );
+                        _selectedRole = null;
+                        _selectedMarkaz = null;
+                        itsNumberController.clear();
+                        passwordController.clear();
                       },
                       child: Text("Register"),
                     ),

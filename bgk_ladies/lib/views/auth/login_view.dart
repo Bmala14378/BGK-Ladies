@@ -4,7 +4,7 @@ import 'dart:developer' as devtools;
 import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
-import 'package:bgk_ladies/repo/auth_exception.dart';
+import 'package:bgk_ladies/repo/auth/auth_exception.dart';
 import 'package:bgk_ladies/utilites/dialog/genrric_dialog.dart';
 import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
 import 'package:flutter/material.dart';

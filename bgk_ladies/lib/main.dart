@@ -1,11 +1,17 @@
+import 'package:bgk_ladies/bloc/appoint/appoint_bloc_event.dart';
+import 'package:bgk_ladies/bloc/appoint/appoint_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_events.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_func.dart';
+import 'package:bgk_ladies/bloc/member/member_bloc_events.dart';
+import 'package:bgk_ladies/bloc/member/member_bloc_func.dart';
 import 'package:bgk_ladies/firebase_options.dart';
-import 'package:bgk_ladies/repo/auth_repo.dart';
-import 'package:bgk_ladies/services/event_service.dart';
+import 'package:bgk_ladies/repo/auth/auth_repo.dart';
+import 'package:bgk_ladies/services/appoint/appoint_service.dart';
+import 'package:bgk_ladies/services/event/event_service.dart';
+import 'package:bgk_ladies/services/member/member_service.dart';
 import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
 import 'package:bgk_ladies/views/attend/event_management_view.dart';
 import 'package:bgk_ladies/views/auth/login_view.dart';
@@ -30,6 +36,12 @@ void main() async {
           create: (context) =>
               EventBloc(EventService())..add(const EventBlocEventInitialize()),
         ),
+        BlocProvider(create: (context) => MemberBloc(MemberService())),
+        BlocProvider(
+          create: (context) =>
+              AppointBloc(AppointService(), EventService())
+                ..add(const AppointBlocEventFetchActiveEvents()),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -52,21 +64,25 @@ class MainPg extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBlocFunc, AuthBlocState>(
+    return BlocConsumer<AuthBlocFunc, AuthBlocState>(
+      listener: (context, state) {
+        if (state is AuthBlocStateLoggedIn) {
+          context.read<MemberBloc>().add(
+            MemberBlocEventInitialize(user: state.user),
+          );
+        }
+      },
       builder: (context, state) {
         if (state.isLoading) {
           return LoadingDialog();
-        } else if (state is AuthBlocStateLoggedOut) {
+        } else if (state is AuthBlocStateLoggedOut ||
+            state is AuthBlocStateNavigatingToLogin) {
           return LoginView();
-        } else if (state is AuthBlocStateNavigatingToRegister) {
+        } else if (state is AuthBlocStateNavigatingToRegister ||
+            state is AuthBlocRegistered) {
           return RegisterView();
-        } else if (state is AuthBlocStateNavigatingToLogin) {
-          return LoginView();
-        } else if (state is AuthBlocRegistered) {
-          return RegisterView();
-        } else if (state is AuthBlocStateLoggedIn) {
-          return DashboardView();
-        } else if (state is AuthBlocStateNavigatingToRegister) {
+        } else if (state is AuthBlocStateLoggedIn ||
+            state is AuthBlocStatesNavigatingToDash) {
           return DashboardView();
         }
         return Center(child: Text("An Unexpected Error Occurred"));

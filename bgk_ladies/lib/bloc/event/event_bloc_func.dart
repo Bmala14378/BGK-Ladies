@@ -1,6 +1,6 @@
 import 'package:bgk_ladies/bloc/event/event_bloc_events.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_state.dart';
-import 'package:bgk_ladies/services/event_service.dart';
+import 'package:bgk_ladies/services/event/event_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class EventBloc extends Bloc<EventBlocEvent, EventBlocState> {

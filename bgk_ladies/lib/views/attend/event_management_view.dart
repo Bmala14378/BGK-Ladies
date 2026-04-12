@@ -1,7 +1,7 @@
 import 'package:bgk_ladies/bloc/event/event_bloc_func.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_state.dart';
 import 'package:bgk_ladies/models/event_model.dart';
-import 'package:bgk_ladies/services/event_service.dart';
+import 'package:bgk_ladies/services/event/event_service.dart';
 import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

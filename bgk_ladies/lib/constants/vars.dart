@@ -13,11 +13,11 @@ class Vars {
   static final attendanceCollection_Var = "Attendance";
 
   //Member Vars
-  static final name_Var = "name";
-  static final glName_Var = "glName";
-  static final mohallah_Var = "mohallah";
-  static final markaz_Var = "markaz";
-  static final remarks_Var = "remarks";
+  static final name_Var = "Name";
+  static final glName_Var = "GL_Name";
+  static final mohalla_Var = "Mohalla";
+  static final markaz_Var = "Markaz";
+  static final remarks_Var = "Remarks";
   //User Vars
   static final passwordHash_Var = "passwordHash";
   static final role_Var = "role";

@@ -1,3 +1,5 @@
+import 'dart:developer' as devtools;
+
 import 'package:bgk_ladies/constants/vars.dart';
 import 'package:bgk_ladies/models/event_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -42,13 +44,16 @@ class EventService {
   }
 
   Stream<List<EventModel>> getActiveEvents() {
-    return _eventCollection
+    devtools.log("Fetching active events stream");
+    final activeEvents = _eventCollection
         .where(Vars.isactive_Var, isEqualTo: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return EventModel.fromMap(doc.data(), doc.id);
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            return EventModel.fromMap(doc.data(), doc.id);
+          }).toList();
+        });
+    devtools.log("Fetched active events stream $activeEvents");
+    return activeEvents;
   }
 }
