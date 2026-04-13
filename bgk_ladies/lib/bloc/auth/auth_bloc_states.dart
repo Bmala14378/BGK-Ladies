@@ -55,5 +55,6 @@ class AuthBlocStateNavigatingToRegister extends AuthBlocState {
 }
 
 class AuthBlocStatesNavigatingToDash extends AuthBlocState {
-  const AuthBlocStatesNavigatingToDash({required super.isLoading});
+  final UserModel user;
+  const AuthBlocStatesNavigatingToDash({required super.isLoading, required this.user});
 }

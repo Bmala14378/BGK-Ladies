@@ -1,5 +1,6 @@
 import 'package:bgk_ladies/enums/markaz_enum.dart';
 import 'package:bgk_ladies/enums/user_role_enum.dart';
+import 'package:bgk_ladies/models/user_model.dart';
 import 'package:flutter/material.dart';
 
 @immutable
@@ -45,5 +46,6 @@ class AuthBlocEventNavigateToRegister extends AuthBlocEvent {
 }
 
 class AuthBlocEventNavigateToDash extends AuthBlocEvent {
-  const AuthBlocEventNavigateToDash();
+   final UserModel user;
+  const AuthBlocEventNavigateToDash({required this.user});
 }

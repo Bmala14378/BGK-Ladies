@@ -164,22 +164,26 @@ class _RegisterViewState extends State<RegisterView> {
                                 onChanged: (val) =>
                                     setState(() => _selectedRole = val),
                               ),
-                              const SizedBox(height: 16),
 
-                              DropdownButtonFormField<MarkazEnum>(
-                                decoration: _buildInputDecoration(
-                                  "Select Markaz",
-                                  Icons.location_on_outlined,
+                              if (_selectedRole == UserRoleEnum.onGroundAdmin ||
+                                  _selectedRole == UserRoleEnum.superUser) ...[
+                                const SizedBox(height: 16),
+
+                                DropdownButtonFormField<MarkazEnum>(
+                                  decoration: _buildInputDecoration(
+                                    "Select Markaz",
+                                    Icons.location_on_outlined,
+                                  ),
+                                  items: MarkazEnum.values.map((markaz) {
+                                    return DropdownMenuItem(
+                                      value: markaz,
+                                      child: Text(markaz.name),
+                                    );
+                                  }).toList(),
+                                  onChanged: (val) =>
+                                      setState(() => _selectedMarkaz = val),
                                 ),
-                                items: MarkazEnum.values.map((markaz) {
-                                  return DropdownMenuItem(
-                                    value: markaz,
-                                    child: Text(markaz.name),
-                                  );
-                                }).toList(),
-                                onChanged: (val) =>
-                                    setState(() => _selectedMarkaz = val),
-                              ),
+                              ],
                               const SizedBox(height: 30),
 
                               SizedBox(
@@ -256,9 +260,7 @@ class _RegisterViewState extends State<RegisterView> {
                       color: Colors.purple,
                     ),
                     onPressed: () {
-                      context.read<AuthBlocFunc>().add(
-                        const AuthBlocEventNavigateToDash(),
-                      );
+                      Navigator.of(context).pop();
                     },
                   ),
                 ),

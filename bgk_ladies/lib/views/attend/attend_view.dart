@@ -76,6 +76,9 @@ class _AttendanceViewState extends State<AttendanceView> {
               ),
             );
             setState(() => _pendingUpdates.clear());
+            context.read<AttendBloc>().add(
+              const AttendBlocEventFetchActiveEvents(),
+            );
           } else if (state is AttendBlocStateError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

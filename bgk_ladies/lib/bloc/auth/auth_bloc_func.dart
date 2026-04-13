@@ -82,7 +82,7 @@ class AuthBlocFunc extends Bloc<AuthBlocEvent, AuthBlocState> {
     });
 
     on<AuthBlocEventNavigateToDash>((event, emit) {
-      emit(AuthBlocStatesNavigatingToDash(isLoading: false));
+      emit(AuthBlocStatesNavigatingToDash(isLoading: false, user: event.user));
     });
   }
 }

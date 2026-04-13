@@ -39,6 +39,8 @@ class DashboardView extends StatelessWidget {
         : null;
     final currentUser = authState is AuthBlocStateLoggedIn
         ? authState.user
+        : (authState is AuthBlocStatesNavigatingToDash)
+        ? authState.user
         : null;
 
     final memberState = context.watch<MemberBloc>().state;
