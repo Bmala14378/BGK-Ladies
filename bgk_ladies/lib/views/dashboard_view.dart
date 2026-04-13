@@ -164,13 +164,13 @@ class DashboardViewWidget extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
-                  child: StatCard(
-                    label: "Active Markaz",
-                    value: "4",
-                    icon: Icons.location_on,
-                  ),
-                ),
+                // const Expanded(
+                //   child: StatCard(
+                //     label: "Active Markaz",
+                //     value: "4",
+                //     icon: Icons.location_on,
+                //   ),
+                // ),
               ],
             ),
             const SizedBox(height: 25),
@@ -187,7 +187,6 @@ class DashboardViewWidget extends StatelessWidget {
                 scrollbars: false,
               ),
               viewportBuilder: (context, position) {
-                // GridView inside SingleChildScrollView requires shrinkWrap & NeverScrollableScrollPhysics
                 return GridView.count(
                   crossAxisCount: 2, // 2 columns
                   crossAxisSpacing: 16,

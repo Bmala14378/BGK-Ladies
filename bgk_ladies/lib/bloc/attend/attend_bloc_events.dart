@@ -7,19 +7,20 @@ abstract class AttendBlocEvent {
   const AttendBlocEvent();
 }
 
-// 1. Fire this when the Bloc is created (populates the dropdown)
 class AttendBlocEventFetchActiveEvents extends AttendBlocEvent {
   const AttendBlocEventFetchActiveEvents();
 }
 
-// 2. Fire this when the user selects an event from the dropdown
 class AttendBlocEventFetchAttendance extends AttendBlocEvent {
   final String eventId;
-  final MarkazEnum markaz; // The admin's markaz
-  const AttendBlocEventFetchAttendance({required this.eventId, required this.markaz});
+  final MarkazEnum markaz;
+  const AttendBlocEventFetchAttendance({
+    required this.eventId,
+    required this.markaz,
+  });
 }
 
-// 3. Fire this when the admin taps present/late/absent
+// Keeping this for potential single-row corrections
 class AttendBlocEventUpdateStatus extends AttendBlocEvent {
   final String eventId;
   final String itsNumber;
@@ -28,6 +29,16 @@ class AttendBlocEventUpdateStatus extends AttendBlocEvent {
     required this.eventId,
     required this.itsNumber,
     required this.status,
+  });
+}
+
+// NEW: Batch Submit Event
+class AttendBlocEventSubmitBatch extends AttendBlocEvent {
+  final String eventId;
+  final Map<String, StatusEnum> attendanceUpdates;
+  const AttendBlocEventSubmitBatch({
+    required this.eventId,
+    required this.attendanceUpdates,
   });
 }
 

@@ -1,11 +1,6 @@
-// ignore: unused_import
-import 'dart:developer' as devtools;
-
 import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
-import 'package:bgk_ladies/repo/auth/auth_exception.dart';
-import 'package:bgk_ladies/utilites/dialog/genrric_dialog.dart';
 import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,18 +13,19 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  TextEditingController itsNumberController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
+  late final TextEditingController itsNumberController;
+  late final TextEditingController passwordController;
+  bool _isPasswordVisible = false;
 
   @override
-  initState() {
-    super.initState();
+  void initState() {
     itsNumberController = TextEditingController();
     passwordController = TextEditingController();
+    super.initState();
   }
 
   @override
-  dispose() {
+  void dispose() {
     itsNumberController.dispose();
     passwordController.dispose();
     super.dispose();
@@ -39,115 +35,212 @@ class _LoginViewState extends State<LoginView> {
   Widget build(BuildContext context) {
     return BlocConsumer<AuthBlocFunc, AuthBlocState>(
       listener: (context, state) {
-        //TODO: Handle Error's Display
-        if (state is AuthBlocStateLoggedOut &&
-            state.exception == InvalidCredentialException()) {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   SnackBar(content: Text("Login failed: Invalid credentials")),
-          // );
-          GenericDialog.showGenericDialog(
-            context: context,
-            title: "Login Failed",
-            content: "Invalid credentials. Please try again.",
-            optionsBuilder: () => {"OK": null},
-          );
-        } else if (state is AuthBlocStateLoggedOut &&
-            state.exception == UserNotFoundException()) {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   SnackBar(content: Text("Login failed: User not found")),
-          // );
-          GenericDialog.showGenericDialog(
-            context: context,
-            title: "Login Failed",
-            content: "User not found. Please check your ITS number.",
-            optionsBuilder: () => {"OK": null},
-          );
-        } else if (state is AuthBlocStateLoggedOut && state.exception != null) {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   SnackBar(content: Text("Login failed: ${state.exception}")),
-          // );
-          GenericDialog.showGenericDialog(
-            context: context,
-            title: "Login Failed",
-            content: "An error occurred: ${state.exception}",
-            optionsBuilder: () => {"OK": null},
-          );
-        }
+        //TODO: Handle errors or success navigation here if needed
       },
       builder: (context, state) {
-        return Stack(
-          children: [
-            Scaffold(
-              appBar: AppBar(title: Text("Login")),
-              body: Center(
+        return Scaffold(
+          body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.purple[50]!, Colors.white],
+              ),
+            ),
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    TextField(
-                      controller: itsNumberController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 8,
-                      decoration: InputDecoration(
-                        hint: Text("Enter your its number"),
-                        border: OutlineInputBorder(),
+                    // 1. App Header / Brand
+                    Icon(
+                      Icons.diversity_3,
+                      size: 80,
+                      color: Colors.purple[800],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "BGK Ladies",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple[900],
+                        letterSpacing: 1.2,
                       ),
                     ),
-                    TextField(
-                      controller: passwordController,
-                      obscureText: true,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hint: Text("Enter your password"),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (itsNumberController.text.isEmpty ||
-                            passwordController.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Please fill in all fields"),
-                            ),
-                          );
-                          return;
-                        }
-                        if (itsNumberController.text.length != 8) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("ITS number must be 8 digits"),
-                            ),
-                          );
-                          return;
-                        }
-                        context.read<AuthBlocFunc>().add(
-                          AuthBlocEventLogIn(
-                            itsNumber: int.parse(itsNumberController.text),
-                            password: passwordController.text,
+                    const SizedBox(height: 40),
+
+                    // 2. Welcome Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(50),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
                           ),
-                        );
-                        // devtools.log("User:");
-                      },
-                      child: Text("Login"),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          const Text(
+                            "Welcome Back",
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          // const SizedBox(height: 8),
+                          // Text(
+                          //   "Login to manage your community",
+                          //   style: TextStyle(color: Colors.grey[600]),
+                          // ),
+                          const SizedBox(height: 30),
+
+                          // ITS Number Input
+                          TextField(
+                            controller: itsNumberController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 8,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(
+                                Icons.badge_outlined,
+                                color: Colors.purple,
+                              ),
+                              hintText: 'Enter your ITS number',
+                              filled: true,
+                              fillColor: Colors.purple[50]?.withAlpha(200),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Password Input
+                          TextField(
+                            controller: passwordController,
+                            obscureText: !_isPasswordVisible,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(
+                                Icons.lock_outline,
+                                color: Colors.purple,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isPasswordVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () => setState(
+                                  () =>
+                                      _isPasswordVisible = !_isPasswordVisible,
+                                ),
+                              ),
+                              hintText: 'Enter your password',
+                              filled: true,
+                              fillColor: Colors.purple[50]?.withAlpha(200),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+
+                          // Login Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 55,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.purple[800],
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                elevation: 0,
+                              ),
+                              onPressed: state.isLoading
+                                  ? null
+                                  : () {
+                                      final its = itsNumberController.text;
+                                      if (its.length != 8) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "ITS number must be 8 digits",
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      context.read<AuthBlocFunc>().add(
+                                        AuthBlocEventLogIn(
+                                          itsNumber: int.parse(its),
+                                          password: passwordController.text,
+                                        ),
+                                      );
+                                    },
+                              child: state.isLoading
+                                  ? Center(child: buildLoadingDialog(context))
+                                  : const Text(
+                                      "Login",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    // ElevatedButton(
-                    //   onPressed: () {
-                    //     context.read<AuthBlocFunc>().add(
-                    //       const AuthBlocEventNavigateToRegister(),
-                    //     );
-                    //   },
-                    //   child: Text("To Register"),
+                    const SizedBox(height: 30),
+
+                    // 3. Navigation to Register
+                    // RichText(
+                    //   text: TextSpan(
+                    //     style: const TextStyle(
+                    //       color: Colors.black54,
+                    //       fontSize: 15,
+                    //     ),
+                    //     children: [
+                    //       const TextSpan(text: "Don't have an account? "),
+                    //       TextSpan(
+                    //         text: "Register here",
+                    //         style: const TextStyle(
+                    //           color: Colors.purple,
+                    //           fontWeight: FontWeight.bold,
+                    //           decoration: TextDecoration.underline,
+                    //         ),
+                    //         recognizer: TapGestureRecognizer()
+                    //           ..onTap = () {
+                    //             context.read<AuthBlocFunc>().add(
+                    //               const AuthBlocEventNavigateToRegister(),
+                    //             );
+                    //           },
+                    //       ),
+                    //     ],
+                    //   ),
                     // ),
                   ],
                 ),
               ),
             ),
-            if (state.isLoading)
-              const Opacity(
-                opacity: 0.5,
-                child: ModalBarrier(dismissible: false, color: Colors.black),
-              ),
-            if (state.isLoading) Center(child: buildLoadingDialog(context)),
-          ],
+          ),
         );
       },
     );

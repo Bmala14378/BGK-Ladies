@@ -28,6 +28,7 @@ class AttendRepository {
     }
   }
 
+  // Keeping the individual update for potential single-row adjustments
   Future<void> updateStatus({
     required String eventId,
     required String itsNumber,
@@ -39,12 +40,35 @@ class AttendRepository {
           .doc(eventId)
           .collection(Vars.attendanceCollection_Var)
           .doc(itsNumber)
-          .update({
-            Vars.status_Var: status.name,
-            Vars.dateTime_Var: FieldValue.serverTimestamp(),
-          });
+          .set({Vars.status_Var: status.name}, SetOptions(merge: true));
     } catch (e) {
-      throw Exception("Failed to update attendance status: $e");
+      throw Exception("Failed to update status: $e");
+    }
+  }
+
+  // NEW: Batch Update Implementation
+  Future<void> submitBatchAttendance({
+    required String eventId,
+    required Map<String, StatusEnum> updates,
+  }) async {
+    try {
+      final batch = _db.batch();
+      final collectionRef = _db
+          .collection(Vars.eventCollection_Var)
+          .doc(eventId)
+          .collection(Vars.attendanceCollection_Var);
+
+      updates.forEach((itsNumber, status) {
+        final docRef = collectionRef.doc(itsNumber);
+        batch.set(docRef, {
+          Vars.status_Var: status.name,
+          'dateTime': DateTime.now(), // Record the time of the batch save
+        }, SetOptions(merge: true));
+      });
+
+      await batch.commit();
+    } catch (e) {
+      throw Exception("Failed to commit batch attendance: $e");
     }
   }
 }

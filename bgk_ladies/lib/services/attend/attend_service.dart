@@ -13,6 +13,7 @@ class AttendService {
     return _repo.getAttendanceStream(eventId: eventId, markaz: markaz);
   }
 
+  // For individual status toggles if needed
   Future<void> submitAttendance({
     required String eventId,
     required String itsNumbers,
@@ -23,5 +24,13 @@ class AttendService {
       itsNumber: itsNumbers,
       status: status,
     );
+  }
+
+  // NEW: Service method for batch submission
+  Future<void> submitBatchAttendance({
+    required String eventId,
+    required Map<String, StatusEnum> updates,
+  }) async {
+    await _repo.submitBatchAttendance(eventId: eventId, updates: updates);
   }
 }

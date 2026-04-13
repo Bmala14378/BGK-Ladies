@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'package:bgk_ladies/bloc/appoint/appoint_bloc_event.dart';
 import 'package:bgk_ladies/bloc/appoint/appoint_bloc_func.dart';
 import 'package:bgk_ladies/bloc/attend/attend_bloc_events.dart';
@@ -25,6 +27,13 @@ class AttendanceView extends StatefulWidget {
 
 class _AttendanceViewState extends State<AttendanceView> {
   String _searchQuery = "";
+  // 1. ADD: Local map for batch updates
+  final Map<String, StatusEnum> _pendingUpdates = {};
+
+  // Helper to show the most recent selection (local or DB)
+  StatusEnum _getDisplayStatus(dynamic record) {
+    return _pendingUpdates[record.itsNumber] ?? record.status;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +43,48 @@ class _AttendanceViewState extends State<AttendanceView> {
         : null;
 
     return Scaffold(
-      body: BlocBuilder<AttendBloc, AttendBlocState>(
+      // 3. ADD: Submit Button
+      floatingActionButton: _pendingUpdates.isNotEmpty
+          ? FloatingActionButton.extended(
+              backgroundColor: Colors.purple[800],
+              onPressed: () {
+                final state = context.read<AttendBloc>().state;
+                if (state is AttendBlocStateLoaded) {
+                  context.read<AttendBloc>().add(
+                    AttendBlocEventSubmitBatch(
+                      eventId: state.eventId,
+                      attendanceUpdates: _pendingUpdates,
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.cloud_upload, color: Colors.white),
+              label: Text(
+                "Save ${_pendingUpdates.length} Changes",
+                style: const TextStyle(color: Colors.white),
+              ),
+            )
+          : null,
+      // 2. CHANGE: BlocBuilder to BlocConsumer for listener support
+      body: BlocConsumer<AttendBloc, AttendBlocState>(
+        listener: (context, state) {
+          if (state is AttendBlocStateSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Attendance saved successfully!"),
+                backgroundColor: Colors.green,
+              ),
+            );
+            setState(() => _pendingUpdates.clear());
+          } else if (state is AttendBlocStateError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
         builder: (context, state) {
           List<EventModel> events = [];
           String? selectedEventId;
@@ -62,37 +112,23 @@ class _AttendanceViewState extends State<AttendanceView> {
                 backgroundColor: Colors.purple[800],
                 floating: true,
                 snap: true,
-                pinned: false,
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.refresh, color: Colors.white),
-                    onPressed: () {
-                      context.read<AttendBloc>().add(
-                        const AttendBlocEventFetchActiveEvents(),
-                      );
-                    },
-                    tooltip: "Refresh Events",
+                    onPressed: () => context.read<AttendBloc>().add(
+                      const AttendBlocEventFetchActiveEvents(),
+                    ),
                   ),
                   IconButton(
                     onPressed: () {
                       context.read<AttendBloc>().add(
                         const AttendBlocEventReset(),
                       );
-                      context.read<AppointBloc>().add(
-                        const AppointBlocEventReset(),
-                      );
-                      context.read<MemberBloc>().add(
-                        const MemberBlocEventReset(),
-                      );
-                      context.read<EventBloc>().add(
-                        const EventBlocEventReset(),
-                      );
                       context.read<AuthBlocFunc>().add(
                         const AuthBlocEventLogOut(),
                       );
                     },
                     icon: const Icon(Icons.logout, color: Colors.white),
-                    tooltip: "Logout",
                   ),
                 ],
                 bottom: PreferredSize(
@@ -107,25 +143,25 @@ class _AttendanceViewState extends State<AttendanceView> {
                       padding: const EdgeInsets.symmetric(horizontal: 12.0),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButtonFormField(
+                          initialValue: selectedEventId,
                           icon: Icon(Icons.event, color: Colors.purple[800]),
                           isExpanded: true,
                           hint: const Text(
                             "Please Select an Event",
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          items: events.map((event) {
-                            return DropdownMenuItem(
-                              value: event.eventId,
-                              child: Text(
-                                event.eventName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
+                          items: events
+                              .map(
+                                (event) => DropdownMenuItem(
+                                  value: event.eventId,
+                                  child: Text(event.eventName),
                                 ),
-                              ),
-                            );
-                          }).toList(),
+                              )
+                              .toList(),
                           onChanged: (value) {
                             if (value != null && userMarkaz != null) {
+                              // 4. ADD: Clear local state on event change
+                              setState(() => _pendingUpdates.clear());
                               context.read<AttendBloc>().add(
                                 AttendBlocEventFetchAttendance(
                                   eventId: value,
@@ -140,23 +176,12 @@ class _AttendanceViewState extends State<AttendanceView> {
                   ),
                 ),
               ),
-
-              // UI rendering logic based on state
-              if (state is AttendBlocStateLoading && state.eventId != null)
+              if (state is AttendBlocStateLoading && state.eventId != null ||
+                  state is AttendBlocStateSubmitting)
                 SliverFillRemaining(
                   child: Center(child: buildLoadingDialog(context)),
                 )
-              else if (state is AttendBlocStateError)
-                SliverFillRemaining(
-                  child: Center(
-                    child: Text(
-                      state.errorMessage,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-                )
               else if (selectedEventId == null)
-                // THIS IS THE FIX: Completely blank space until an event is selected
                 const SliverToBoxAdapter(child: SizedBox.shrink())
               else if (state is AttendBlocStateLoaded)
                 ..._buildLoadedContent(state),
@@ -174,13 +199,16 @@ class _AttendanceViewState extends State<AttendanceView> {
           member.itsNumber.contains(query);
     }).toList();
 
-    final attendance = state.attendanceList;
-    final present = attendance
-        .where((e) => e.status == StatusEnum.present)
+    // Stats now include local pending updates for real-time accuracy
+    final total = state.attendanceList.length;
+    final present = state.attendanceList
+        .where((e) => _getDisplayStatus(e) == StatusEnum.present)
         .length;
-    final late = attendance.where((e) => e.status == StatusEnum.late).length;
-    final absent = attendance
-        .where((e) => e.status == StatusEnum.absent)
+    final late = state.attendanceList
+        .where((e) => _getDisplayStatus(e) == StatusEnum.late)
+        .length;
+    final absent = state.attendanceList
+        .where((e) => _getDisplayStatus(e) == StatusEnum.absent)
         .length;
 
     return [
@@ -191,24 +219,16 @@ class _AttendanceViewState extends State<AttendanceView> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                padding: const EdgeInsets.all(16.0),
                 child: SizedBox(
                   height: 50,
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: "Search by name or ITS...",
                       prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear, size: 20),
-                              onPressed: () =>
-                                  setState(() => _searchQuery = ""),
-                            )
-                          : null,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
                     ),
                     onChanged: (value) => setState(() => _searchQuery = value),
                   ),
@@ -222,7 +242,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildStatItem("Total", attendance.length, Colors.blueGrey),
+                    _buildStatItem("Total", total, Colors.blueGrey),
                     _buildStatItem("Present", present, Colors.green),
                     _buildStatItem("Late", late, Colors.yellow[800]!),
                     _buildStatItem("Absent", absent, Colors.red),
@@ -236,87 +256,137 @@ class _AttendanceViewState extends State<AttendanceView> {
           ),
         ),
       ),
+      SliverList(
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final member = filteredList[index];
+          final currentStatus = _getDisplayStatus(member);
+          // Check if this specific member has unsaved changes
+          final bool isDirty = _pendingUpdates.containsKey(member.itsNumber);
 
-      if (filteredList.isEmpty)
-        const SliverFillRemaining(
-          child: Center(child: Text("No members found matching your search.")),
-        )
-      else
-        SliverList(
-          delegate: SliverChildBuilderDelegate((context, index) {
-            final record = filteredList[index];
-            return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              elevation: 0.5,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: ListTile(
-                  title: Text(
-                    record.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+          return Card(
+            // Change elevation or border if there is an unsaved change
+            elevation: isDirty ? 4 : 1,
+            shape: isDirty
+                ? RoundedRectangleBorder(
+                    side: BorderSide(color: Colors.purple[800]!, width: 1),
+                    borderRadius: BorderRadius.circular(12),
+                  )
+                : null,
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: ListTile(
+              title: Row(
+                children: [
+                  SizedBox(
+                    width: 184,
+                    child: Text(
+                      member.name,
+                      maxLines: 2,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
-                  subtitle: Text(
-                    "ITS: ${record.itsNumber}",
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _statusButton(
-                        context: context,
-                        record: record,
-                        status: StatusEnum.present,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 4),
-                      _statusButton(
-                        context: context,
-                        record: record,
-                        status: StatusEnum.late,
-                        color: Colors.yellow[800]!,
-                      ),
-                      const SizedBox(width: 4),
-                      _statusButton(
-                        context: context,
-                        record: record,
-                        status: StatusEnum.absent,
-                        color: Colors.red,
-                      ),
-                    ],
-                  ),
+                  if (isDirty) ...[
+                    const SizedBox(width: 8),
+                    // Small "Unsaved" indicator
+                    Icon(Icons.history, size: 14, color: Colors.purple[800]),
+                  ],
+                ],
+              ),
+              subtitle: Text(member.itsNumber),
+              trailing: SizedBox(
+                width: 125,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _statusIcon(
+                      StatusEnum.present,
+                      Colors.green,
+                      currentStatus,
+                      member.itsNumber,
+                      isDirty,
+                    ),
+                    _statusIcon(
+                      StatusEnum.late,
+                      Colors.orange,
+                      currentStatus,
+                      member.itsNumber,
+                      isDirty,
+                    ),
+                    _statusIcon(
+                      StatusEnum.absent,
+                      Colors.red,
+                      currentStatus,
+                      member.itsNumber,
+                      isDirty,
+                    ),
+                  ],
                 ),
               ),
-            );
-          }, childCount: filteredList.length),
-        ),
+            ),
+          );
+        }, childCount: filteredList.length),
+      ),
+      const SliverToBoxAdapter(child: SizedBox(height: 100)),
     ];
   }
 
+  Widget _statusIcon(
+    StatusEnum status,
+    Color color,
+    StatusEnum current,
+    String itsNumber,
+    bool isDirty,
+  ) {
+    bool isSelected = status == current;
+    // If it's selected AND unsaved, we make the border thicker/different
+    bool isPendingThisStatus = isSelected && isDirty;
+
+    return GestureDetector(
+      onTap: () => setState(() => _pendingUpdates[itsNumber] = status),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isSelected ? color : Colors.transparent,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isPendingThisStatus ? Colors.purple[800]! : color,
+            width: isPendingThisStatus
+                ? 3
+                : 1, // Thicker border for unsaved changes
+          ),
+          boxShadow: isPendingThisStatus
+              ? [
+                  BoxShadow(
+                    color: color.withAlpha(40),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
+        ),
+        child: Icon(
+          isSelected ? Icons.check : Icons.circle_outlined,
+          size: 16,
+          color: isSelected ? Colors.white : color,
+        ),
+      ),
+    );
+  }
+
+  // ignore: unused_element
   Widget _statusButton({
-    required BuildContext context,
     required dynamic record,
     required StatusEnum status,
     required Color color,
   }) {
-    bool isSelected = record.status == status;
+    // 5. CHANGE: Buttons now update local state instead of firing Bloc events
+    bool isSelected = _getDisplayStatus(record) == status;
     return InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap: () {
-        context.read<AttendBloc>().add(
-          AttendBlocEventUpdateStatus(
-            eventId: (context.read<AttendBloc>().state as AttendBlocStateLoaded)
-                .eventId,
-            itsNumber: record.itsNumber,
-            status: status,
-          ),
-        );
-      },
+      onTap: () => setState(() => _pendingUpdates[record.itsNumber] = status),
       child: Icon(
         isSelected ? Icons.check_circle : Icons.circle_outlined,
         color: isSelected ? color : Colors.grey[400],
@@ -350,12 +420,7 @@ class _AttendanceViewState extends State<AttendanceView> {
 
   Widget _buildListHeader() {
     return Padding(
-      padding: const EdgeInsets.only(
-        left: 16.0,
-        right: 28.0,
-        top: 12.0,
-        bottom: 8.0,
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 28, 8),
       child: Row(
         children: [
           const Expanded(
@@ -409,28 +474,14 @@ class _AttendanceViewState extends State<AttendanceView> {
 class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final double height;
-
   _StickyHeaderDelegate({required this.child, required this.height});
-
   @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: child,
-    );
-  }
-
+  Widget build(context, shrink, overlaps) =>
+      Container(color: Theme.of(context).scaffoldBackgroundColor, child: child);
   @override
   double get maxExtent => height;
-
   @override
   double get minExtent => height;
-
   @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
-      true;
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate old) => true;
 }

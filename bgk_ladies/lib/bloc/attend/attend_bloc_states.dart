@@ -7,20 +7,17 @@ abstract class AttendBlocState {
   const AttendBlocState();
 }
 
-// 1. Initial State: Has events, but no event is selected yet
 class AttendBlocStateInitial extends AttendBlocState {
   final List<EventModel> activeEvents;
   const AttendBlocStateInitial({required this.activeEvents});
 }
 
-// 2. Loading State: Can hold activeEvents so the dropdown doesn't vanish while loading members
 class AttendBlocStateLoading extends AttendBlocState {
   final List<EventModel>? activeEvents;
   final String? eventId;
   const AttendBlocStateLoading({this.activeEvents, this.eventId});
 }
 
-// 3. Loaded State: Holds the events for the dropdown, the selected ID, and the attendance list
 class AttendBlocStateLoaded extends AttendBlocState {
   final String eventId;
   final List<EventModel> activeEvents;
@@ -31,6 +28,16 @@ class AttendBlocStateLoaded extends AttendBlocState {
     required this.activeEvents,
     required this.attendanceList,
   });
+}
+
+// NEW: Submission States
+class AttendBlocStateSubmitting extends AttendBlocState {
+  const AttendBlocStateSubmitting();
+}
+
+class AttendBlocStateSuccess extends AttendBlocState {
+  final String message;
+  const AttendBlocStateSuccess(this.message);
 }
 
 class AttendBlocStateError extends AttendBlocState {

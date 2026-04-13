@@ -9,13 +9,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class AttendBloc extends Bloc<AttendBlocEvent, AttendBlocState> {
   AttendBloc(AttendService attendService, EventService eventService)
     : super(AttendBlocStateInitial(activeEvents: [])) {
+    // 1. Fetch Active Events
     on<AttendBlocEventFetchActiveEvents>((event, emit) async {
       emit(const AttendBlocStateLoading());
       try {
         await emit.forEach<List<EventModel>>(
           eventService.getActiveEvents(),
           onData: (events) {
-            // If an event is already selected, keep the user in the Loaded state
             if (state is AttendBlocStateLoaded) {
               final currentState = state as AttendBlocStateLoaded;
               return AttendBlocStateLoaded(
@@ -24,7 +24,6 @@ class AttendBloc extends Bloc<AttendBlocEvent, AttendBlocState> {
                 attendanceList: currentState.attendanceList,
               );
             }
-            // Otherwise, stay in the initial state with the new dropdown list
             return AttendBlocStateInitial(activeEvents: events);
           },
           onError: (error, stackTrace) =>
@@ -35,9 +34,8 @@ class AttendBloc extends Bloc<AttendBlocEvent, AttendBlocState> {
       }
     });
 
-    // 2. Fetch Members when Event is Selected
+    // 2. Fetch Attendance (Stream)
     on<AttendBlocEventFetchAttendance>((event, emit) async {
-      // Grab current events so the dropdown doesn't disappear during loading
       List<EventModel> currentEvents = [];
       if (state is AttendBlocStateInitial) {
         currentEvents = (state as AttendBlocStateInitial).activeEvents;
@@ -68,22 +66,35 @@ class AttendBloc extends Bloc<AttendBlocEvent, AttendBlocState> {
       }
     });
 
-    // 3. Update Status
-    on<AttendBlocEventUpdateStatus>((event, emit) async {
-      try {
-        await attendService.submitAttendance(
-          eventId: event.eventId,
-          itsNumbers: event.itsNumber,
-          status: event.status,
-        );
+    // 3. Batch Submit Logic
+    on<AttendBlocEventSubmitBatch>((event, emit) async {
+      // Temporarily store current data to restore state if submission fails
+      final previousState = state;
 
+      emit(const AttendBlocStateSubmitting());
+      try {
+        await attendService.submitBatchAttendance(
+          eventId: event.eventId,
+          updates: event.attendanceUpdates,
+        );
+        emit(const AttendBlocStateSuccess("Attendance updated successfully!"));
+
+        // After showing success, we can return to the previous state to keep the UI interactive
+        if (previousState is AttendBlocStateLoaded) {
+          emit(previousState);
+        }
       } catch (e) {
-        emit(AttendBlocStateError(errorMessage: e.toString()));
+        emit(
+          AttendBlocStateError(
+            errorMessage: "Batch Update Failed: ${e.toString()}",
+          ),
+        );
       }
     });
 
+    // 4. Reset
     on<AttendBlocEventReset>((event, emit) {
-      emit(const AttendBlocStateInitial(activeEvents: []));
+      emit(AttendBlocStateInitial(activeEvents: []));
     });
   }
 }

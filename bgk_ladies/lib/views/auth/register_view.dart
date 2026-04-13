@@ -1,12 +1,8 @@
-import 'dart:developer' as devtools;
-
 import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
 import 'package:bgk_ladies/enums/markaz_enum.dart';
 import 'package:bgk_ladies/enums/user_role_enum.dart';
-import 'package:bgk_ladies/utilites/dialog/genrric_dialog.dart';
-import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -18,190 +14,298 @@ class RegisterView extends StatefulWidget {
 }
 
 class _RegisterViewState extends State<RegisterView> {
-  TextEditingController itsNumberController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-
-  List<DropdownMenuItem<String>> roleEntries = UserRoleEnum.values
-      .map(
-        (role) => DropdownMenuItem<String>(
-          value: role.name,
-          child: Text(role.displayName),
-        ),
-      )
-      .toList();
-
+  late final TextEditingController itsNumberController;
+  late final TextEditingController passwordController;
   UserRoleEnum? _selectedRole;
-
   MarkazEnum? _selectedMarkaz;
+  bool _isPasswordVisible = false;
+
+  @override
+  void initState() {
+    itsNumberController = TextEditingController();
+    passwordController = TextEditingController();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    itsNumberController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthBlocFunc, AuthBlocState>(
-      listener: (context, state) {
-        if (state is AuthBlocStateLoggedIn) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text("Registration successful!")));
-          context.read<AuthBlocFunc>().add(
-            const AuthBlocEventNavigateToLogin(),
-          );
-        } else if (state is AuthBlocStateLoggedOut && state.exception != null) {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   SnackBar(content: Text("Registration failed: ${state.exception}")),
-          // );
-          GenericDialog.showGenericDialog(
-            context: context,
-            title: "Registration Failed",
-            content: "An error occurred during registration. Please try again.",
-            optionsBuilder: () => {"OK": null},
-          );
-        }
-      },
+      listener: (context, state) {},
       builder: (context, state) {
-        return Stack(
-          children: [
-            Scaffold(
-              appBar: AppBar(title: Text("Register")),
-              body: Center(
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: itsNumberController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 8,
-                      decoration: InputDecoration(
-                        hint: Text("Enter your ITS number"),
-                        border: OutlineInputBorder(),
-                      ),
+        return Scaffold(
+          body: Stack(
+            children: [
+              // 1. Background Gradient
+              Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.purple[50]!, Colors.white],
+                  ),
+                ),
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 60,
                     ),
-                    // DropdownMenu(
-                    //   dropdownMenuEntries: roleEntries,
-                    //   label: Text("Select your role"),
-                    //   initialSelection: roleEntries.first.value,
-                    //   onSelected: (value) {
-                    //     // Handle role selection
-                    //   },
-                    // ),
-                    DropdownButtonFormField(
-                      items: roleEntries,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedRole = UserRoleEnum.values.firstWhere(
-                            (role) => role.name == value,
-                          );
-                        });
-                      },
-                      decoration: InputDecoration(
-                        label: Text("Select your role"),
-                        border: OutlineInputBorder(),
-                        prefix: Icon(Icons.person),
-                      ),
-                    ),
-                    if (_selectedRole == UserRoleEnum.onGroundAdmin)
-                      DropdownButtonFormField(
-                        items: MarkazEnum.values
-                            .map(
-                              (markaz) => DropdownMenuItem<String>(
-                                value: markaz.name,
-                                child: Text(markaz.displayName),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedMarkaz = MarkazEnum.values.firstWhere(
-                              (markaz) => markaz.name == value,
-                            );
-                          });
-                        },
-                        decoration: InputDecoration(
-                          label: Text("Select your markaz"),
-                          border: OutlineInputBorder(),
-                          prefix: Icon(Icons.location_on),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.person_add_outlined,
+                          size: 60,
+                          color: Colors.purple[800],
                         ),
-                      ),
-                    TextField(
-                      controller: passwordController,
-                      obscureText: true,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hint: Text("Enter your password"),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_selectedRole == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Please select a role")),
-                          );
-                          return;
-                        }
-                        if (_selectedRole == UserRoleEnum.onGroundAdmin &&
-                            _selectedMarkaz == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Please select a markaz")),
-                          );
-                          return;
-                        }
-                        if (itsNumberController.text.isEmpty ||
-                            passwordController.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Please fill all fields")),
-                          );
-                          return;
-                        }
-                        if (int.tryParse(itsNumberController.text) == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("ITS number must be valid")),
-                          );
-                          return;
-                        }
-                        if (_selectedMarkaz != null &&
-                            _selectedRole == UserRoleEnum.onGroundAdmin) {
-                          devtools.log(
-                            "Selected Markaz: ${_selectedMarkaz!.name}",
-                          );
-                        } else {
-                          devtools.log("No Markaz selected");
-                          _selectedMarkaz = null;
-                        }
-                        context.read<AuthBlocFunc>().add(
-                          AuthBlocEventRegister(
-                            itsNumber: int.parse(itsNumberController.text),
-                            password: passwordController.text,
-                            role: _selectedRole!,
-                            markaz: _selectedMarkaz,
+                        const SizedBox(height: 12),
+                        Text(
+                          "Create Account",
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple[900],
                           ),
-                        );
-                        _selectedRole = null;
-                        _selectedMarkaz = null;
-                        itsNumberController.clear();
-                        passwordController.clear();
-                      },
-                      child: Text("Register"),
+                        ),
+                        const SizedBox(height: 30),
+
+                        // Registration Card
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(05),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "Personal Details",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purple,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              TextField(
+                                controller: itsNumberController,
+                                keyboardType: TextInputType.number,
+                                decoration: _buildInputDecoration(
+                                  "ITS Number",
+                                  Icons.badge_outlined,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              TextField(
+                                controller: passwordController,
+                                obscureText: !_isPasswordVisible,
+                                decoration:
+                                    _buildInputDecoration(
+                                      "Password",
+                                      Icons.lock_outline,
+                                    ).copyWith(
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _isPasswordVisible
+                                              ? Icons.visibility
+                                              : Icons.visibility_off,
+                                        ),
+                                        onPressed: () => setState(
+                                          () => _isPasswordVisible =
+                                              !_isPasswordVisible,
+                                        ),
+                                      ),
+                                    ),
+                              ),
+
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 20),
+                                child: Divider(),
+                              ),
+
+                              const Text(
+                                "Role & Assignment",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purple,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              DropdownButtonFormField<UserRoleEnum>(
+                                decoration: _buildInputDecoration(
+                                  "Select Role",
+                                  Icons.assignment_ind_outlined,
+                                ),
+                                items: UserRoleEnum.values.map((role) {
+                                  return DropdownMenuItem(
+                                    value: role,
+                                    child: Text(role.displayName),
+                                  );
+                                }).toList(),
+                                onChanged: (val) =>
+                                    setState(() => _selectedRole = val),
+                              ),
+                              const SizedBox(height: 16),
+
+                              DropdownButtonFormField<MarkazEnum>(
+                                decoration: _buildInputDecoration(
+                                  "Select Markaz",
+                                  Icons.location_on_outlined,
+                                ),
+                                items: MarkazEnum.values.map((markaz) {
+                                  return DropdownMenuItem(
+                                    value: markaz,
+                                    child: Text(markaz.name),
+                                  );
+                                }).toList(),
+                                onChanged: (val) =>
+                                    setState(() => _selectedMarkaz = val),
+                              ),
+                              const SizedBox(height: 30),
+
+                              SizedBox(
+                                width: double.infinity,
+                                height: 55,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.purple[800],
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  onPressed: state.isLoading
+                                      ? null
+                                      : _handleRegister,
+                                  child: state.isLoading
+                                      ? const CircularProgressIndicator(
+                                          color: Colors.white,
+                                        )
+                                      : const Text(
+                                          "Register",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+
+                        // RichText(
+                        //   text: TextSpan(
+                        //     style: const TextStyle(
+                        //       color: Colors.black54,
+                        //       fontSize: 15,
+                        //     ),
+                        //     children: [
+                        //       const TextSpan(text: "Already have an account? "),
+                        //       TextSpan(
+                        //         text: "Login here",
+                        //         style: const TextStyle(
+                        //           color: Colors.purple,
+                        //           fontWeight: FontWeight.bold,
+                        //           decoration: TextDecoration.underline,
+                        //         ),
+                        //         recognizer: TapGestureRecognizer()
+                        //           ..onTap = () {
+                        //             context.read<AuthBlocFunc>().add(
+                        //               const AuthBlocEventLogOut(),
+                        //             );
+                        //           },
+                        //       ),
+                        //     ],
+                        //   ),
+                        // ),
+                      ],
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<AuthBlocFunc>().add(
-                          const AuthBlocEventNavigateToDash(),
-                        );
-                      },
-                      child: Text("Back"),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-            if (state.isLoading)
-              const Opacity(
-                opacity: 0.8,
-                child: ModalBarrier(dismissible: false, color: Colors.black),
+
+              // 2. NEW: Floating Back Button to Dashboard
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 10, top: 10),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.purple,
+                    ),
+                    onPressed: () {
+                      context.read<AuthBlocFunc>().add(
+                        const AuthBlocEventNavigateToDash(),
+                      );
+                    },
+                  ),
+                ),
               ),
-            if (state.isLoading) Center(child: buildLoadingDialog(context)),
-          ],
+            ],
+          ),
         );
       },
     );
+  }
+
+  InputDecoration _buildInputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: Colors.purple),
+      filled: true,
+      fillColor: Colors.purple[50]?.withAlpha(3),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide.none,
+      ),
+    );
+  }
+
+  void _handleRegister() {
+    if (itsNumberController.text.length != 8) {
+      _showSnackBar("ITS number must be 8 digits");
+      return;
+    }
+    if (_selectedRole == null) {
+      _showSnackBar("Please select a role");
+      return;
+    }
+
+    context.read<AuthBlocFunc>().add(
+      AuthBlocEventRegister(
+        itsNumber: int.parse(itsNumberController.text),
+        password: passwordController.text,
+        role: _selectedRole!,
+        markaz: _selectedMarkaz,
+      ),
+    );
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

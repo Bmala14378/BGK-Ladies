@@ -19,6 +19,13 @@ class QuickActionButton extends StatelessWidget {
         color: const Color(0xFFEFE7F9),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.purple.withAlpha(10)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purple.withAlpha(30),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
