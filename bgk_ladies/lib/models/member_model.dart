@@ -1,11 +1,12 @@
 import 'package:bgk_ladies/constants/vars.dart';
+import 'package:bgk_ladies/enums/markaz_enum.dart';
 
 class MemberModel {
   final String itsNumber;
   final String name;
   final String glName;
   final String mohalla;
-  final String markaz;
+  final MarkazEnum markaz;
   final String remarks;
 
   MemberModel({
@@ -23,7 +24,7 @@ class MemberModel {
       name: map[Vars.name_Var] ?? "",
       glName: map[Vars.glName_Var] ?? "",
       mohalla: map[Vars.mohalla_Var] ?? "",
-      markaz: map[Vars.markaz_Var] ?? "",
+      markaz: MarkazEnum.values.byName(map[Vars.markaz_Var]),
       remarks: map[Vars.remarks_Var] ?? "",
     );
   }

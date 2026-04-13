@@ -28,8 +28,8 @@ class AppointRepository {
           Vars.name_Var: member.name,
           Vars.glName_Var: member.glName,
           Vars.mohalla_Var: member.mohalla,
-          Vars.markaz_Var: member.markaz,
-          Vars.status_Var: StatusEnum.appointed,
+          Vars.markaz_Var: member.markaz.name,
+          Vars.status_Var: StatusEnum.appointed.name,
           Vars.dateTime_Var: FieldValue.serverTimestamp(),
         });
       }

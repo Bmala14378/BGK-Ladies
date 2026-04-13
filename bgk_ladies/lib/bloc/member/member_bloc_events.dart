@@ -11,3 +11,6 @@ class MemberBlocEventInitialize extends MemberBlocEvent {
   const MemberBlocEventInitialize({required this.user});
 }
 
+class MemberBlocEventReset  extends MemberBlocEvent {
+  const MemberBlocEventReset();
+}

@@ -181,14 +181,14 @@ class _RegisterViewState extends State<RegisterView> {
                       },
                       child: Text("Register"),
                     ),
-                    // ElevatedButton(
-                    //   onPressed: () {
-                    //     context.read<AuthBlocFunc>().add(
-                    //       const AuthBlocEventNavigateToDash(),
-                    //     );
-                    //   },
-                    //   child: Text("Back"),
-                    // ),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<AuthBlocFunc>().add(
+                          const AuthBlocEventNavigateToDash(),
+                        );
+                      },
+                      child: Text("Back"),
+                    ),
                   ],
                 ),
               ),
@@ -198,7 +198,7 @@ class _RegisterViewState extends State<RegisterView> {
                 opacity: 0.8,
                 child: ModalBarrier(dismissible: false, color: Colors.black),
               ),
-            if (state.isLoading) const Center(child: LoadingDialog()),
+            if (state.isLoading) Center(child: buildLoadingDialog(context)),
           ],
         );
       },

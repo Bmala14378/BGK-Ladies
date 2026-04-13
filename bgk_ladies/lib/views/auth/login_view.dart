@@ -146,7 +146,7 @@ class _LoginViewState extends State<LoginView> {
                 opacity: 0.5,
                 child: ModalBarrier(dismissible: false, color: Colors.black),
               ),
-            if (state.isLoading) const Center(child: LoadingDialog()),
+            if (state.isLoading) Center(child: buildLoadingDialog(context)),
           ],
         );
       },

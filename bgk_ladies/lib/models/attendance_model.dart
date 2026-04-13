@@ -1,4 +1,5 @@
 import 'package:bgk_ladies/constants/vars.dart';
+import 'package:bgk_ladies/enums/markaz_enum.dart';
 import 'package:bgk_ladies/enums/status_enum.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -8,7 +9,7 @@ class AttendanceModel {
   final String name;
   final String glName;
   final String mohalla;
-  final String markaz;
+  final MarkazEnum markaz;
   final StatusEnum status;
 
   AttendanceModel({
@@ -26,8 +27,7 @@ class AttendanceModel {
     var dateValue = map[Vars.dateTime_Var];
 
     if (dateValue is Timestamp) {
-      parsedDate = dateValue
-          .toDate(); 
+      parsedDate = dateValue.toDate();
     } else if (dateValue is String) {
       parsedDate = DateTime.parse(dateValue);
     }
@@ -39,7 +39,7 @@ class AttendanceModel {
       status: StatusEnum.values.byName(map[Vars.status_Var] ?? "na"),
       glName: map[Vars.glName_Var] ?? "",
       mohalla: map[Vars.mohalla_Var] ?? "",
-      markaz: map[Vars.markaz_Var] ?? "",
+      markaz: MarkazEnum.values.byName(map[Vars.markaz_Var]),
     );
   }
 

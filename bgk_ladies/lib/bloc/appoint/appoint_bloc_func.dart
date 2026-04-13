@@ -62,5 +62,9 @@ class AppointBloc extends Bloc<AppointBlocEvent, AppointBlocState> {
         emit(AppointBlocStateError(errorMessage: e.toString()));
       }
     });
+
+    on<AppointBlocEventReset>((event, emit) {
+      emit(AppointBlocStateInitial(activeEvents: []));
+    });
   }
 }

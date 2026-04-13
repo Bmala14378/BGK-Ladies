@@ -43,5 +43,9 @@ class MemberBloc extends Bloc<MemberBlocEvent, MemberBlocState> {
         emit(MemberStateError(e.toString()));
       }
     });
+
+    on <MemberBlocEventReset> ((event, emit) {
+      emit(const InitialMemberBlocState(isLoading: true));
+    });
   }
 }

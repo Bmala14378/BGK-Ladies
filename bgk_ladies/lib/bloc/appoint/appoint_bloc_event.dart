@@ -23,3 +23,7 @@ class AppointBlocEventSubmitAppointment extends AppointBlocEvent {
     required this.selectedMembers,
   });
 }
+
+class AppointBlocEventReset extends AppointBlocEvent {
+  const AppointBlocEventReset();
+}

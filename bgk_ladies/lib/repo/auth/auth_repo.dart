@@ -61,12 +61,10 @@ class AuthRepository {
   }
 
   Future<void> logOut() async {
-    //TODO: Logout Function
     return;
   }
 
   Future<UserModel?> getCurrentUser() async {
-    //TODO: Current User Function
     return null;
   }
 }

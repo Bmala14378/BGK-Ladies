@@ -1,8 +1,13 @@
 import 'dart:developer' as devtools;
 
+import 'package:bgk_ladies/bloc/appoint/appoint_bloc_event.dart';
+import 'package:bgk_ladies/bloc/appoint/appoint_bloc_func.dart';
+import 'package:bgk_ladies/bloc/attend/attend_bloc_events.dart';
+import 'package:bgk_ladies/bloc/attend/attend_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
+import 'package:bgk_ladies/bloc/event/event_bloc_events.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_func.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_state.dart';
 import 'package:bgk_ladies/bloc/member/member_bloc_events.dart';
@@ -14,6 +19,7 @@ import 'package:bgk_ladies/models/member_model.dart';
 import 'package:bgk_ladies/models/user_model.dart';
 import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
 import 'package:bgk_ladies/views/attend/appoint_view.dart';
+import 'package:bgk_ladies/views/attend/attend_view.dart';
 import 'package:bgk_ladies/widgets/empty_state.dart';
 import 'package:bgk_ladies/widgets/event_card.dart';
 import 'package:bgk_ladies/widgets/quick_action_button.dart';
@@ -35,14 +41,14 @@ class DashboardView extends StatelessWidget {
         ? authState.user
         : null;
 
-    if (authState is AuthBlocStateLoggedIn) {
-      final memberBloc = context.read<MemberBloc>();
-      if (memberBloc.state is InitialMemberBlocState) {
-        memberBloc.add(MemberBlocEventInitialize(user: authState.user));
-      }
-    }
     final memberState = context.watch<MemberBloc>().state;
     if (currentUser?.role != UserRoleEnum.onGroundAdmin) {
+      if (authState is AuthBlocStateLoggedIn) {
+        final memberBloc = context.read<MemberBloc>();
+        if (memberBloc.state is InitialMemberBlocState) {
+          memberBloc.add(MemberBlocEventInitialize(user: authState.user));
+        }
+      }
       if (memberState is LoadedMemberBlocState) {
         // Use the pre-fetched profile directly from the state!
         final myInfo = memberState.userProfile;
@@ -62,25 +68,15 @@ class DashboardView extends StatelessWidget {
         devtools.log(
           "MemberBloc is still loading or failed to load. Current state: ${memberState.errorMessage}",
         );
-        return const Scaffold(body: LoadingDialog());
+        return Scaffold(body: Center(child: buildLoadingDialog(context)));
       } else {
         devtools.log(
           "MemberBloc is still loading. Current state: ${memberState.runtimeType}",
         );
-        return const Scaffold(body: LoadingDialog());
+        return Scaffold(body: Center(child: buildLoadingDialog(context)));
       }
     } else {
-      // For onGroundAdmin, we might want to show a different dashboard or a loading state until we fetch necessary data.
-      // TODO: Placeholder for onGroundAdmin dashboard or attendance view
-      // return AttendanceView();
-      return const Scaffold(
-        body: Center(
-          child: Text(
-            "On-Ground Admin Dashboard is under construction.",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-      );
+      return AttendanceView();
     }
   }
 }
@@ -111,6 +107,10 @@ class DashboardViewWidget extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () {
+              context.read<AttendBloc>().add(const AttendBlocEventReset());
+              context.read<AppointBloc>().add(const AppointBlocEventReset());
+              context.read<MemberBloc>().add(const MemberBlocEventReset());
+              context.read<EventBloc>().add(const EventBlocEventReset());
               context.read<AuthBlocFunc>().add(const AuthBlocEventLogOut());
             },
           ),
@@ -242,10 +242,16 @@ class DashboardViewWidget extends StatelessWidget {
 
                     if (currentUser.canMarkAttendance)
                       QuickActionButton(
-                        //TODO: Implement attendance marking flow
                         icon: Icons.check_circle,
                         label: "Mark Attendance",
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AttendanceView(),
+                            ),
+                          );
+                        },
                       ),
 
                     if (currentUser.canCreateUser)
@@ -272,7 +278,7 @@ class DashboardViewWidget extends StatelessWidget {
             BlocBuilder<EventBloc, EventBlocState>(
               builder: (context, state) {
                 if (state.isLoading) {
-                  return const LoadingDialog();
+                  return Center(child: buildLoadingDialog(context));
                 }
                 if (state is EventStateLoaded) {
                   final activeEvents = state.activeEvents;

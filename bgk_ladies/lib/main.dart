@@ -1,5 +1,7 @@
 import 'package:bgk_ladies/bloc/appoint/appoint_bloc_event.dart';
 import 'package:bgk_ladies/bloc/appoint/appoint_bloc_func.dart';
+import 'package:bgk_ladies/bloc/attend/attend_bloc_events.dart';
+import 'package:bgk_ladies/bloc/attend/attend_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
@@ -10,6 +12,7 @@ import 'package:bgk_ladies/bloc/member/member_bloc_func.dart';
 import 'package:bgk_ladies/firebase_options.dart';
 import 'package:bgk_ladies/repo/auth/auth_repo.dart';
 import 'package:bgk_ladies/services/appoint/appoint_service.dart';
+import 'package:bgk_ladies/services/attend/attend_service.dart';
 import 'package:bgk_ladies/services/event/event_service.dart';
 import 'package:bgk_ladies/services/member/member_service.dart';
 import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
@@ -42,6 +45,11 @@ void main() async {
               AppointBloc(AppointService(), EventService())
                 ..add(const AppointBlocEventFetchActiveEvents()),
         ),
+        BlocProvider(
+          create: (context) =>
+              AttendBloc(AttendService(), EventService())
+                ..add(const AttendBlocEventFetchActiveEvents()),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -70,11 +78,18 @@ class MainPg extends StatelessWidget {
           context.read<MemberBloc>().add(
             MemberBlocEventInitialize(user: state.user),
           );
+          context.read<EventBloc>().add(const EventBlocEventInitialize());
+          context.read<AttendBloc>().add(
+            const AttendBlocEventFetchActiveEvents(),
+          );
+          context.read<AppointBloc>().add(
+            const AppointBlocEventFetchActiveEvents(),
+          );
         }
       },
       builder: (context, state) {
         if (state.isLoading) {
-          return LoadingDialog();
+          return Scaffold(body: Center(child: buildLoadingDialog(context)));
         } else if (state is AuthBlocStateLoggedOut ||
             state is AuthBlocStateNavigatingToLogin) {
           return LoginView();

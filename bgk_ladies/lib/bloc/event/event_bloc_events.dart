@@ -23,7 +23,12 @@ class EventBlocEventSelectEvent extends EventBlocEvent {
 class EventBlocEventUpdateTitle extends EventBlocEvent {
   final String eventId;
   final String newName;
-  const EventBlocEventUpdateTitle({required this.eventId, required this.newName});
+  const EventBlocEventUpdateTitle({
+    required this.eventId,
+    required this.newName,
+  });
 }
 
-
+class EventBlocEventReset extends EventBlocEvent {
+  const EventBlocEventReset();
+}

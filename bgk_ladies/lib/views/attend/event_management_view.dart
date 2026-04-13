@@ -21,7 +21,7 @@ class _EventManagementViewState extends State<EventManagementView> {
       body: BlocBuilder<EventBloc, EventBlocState>(
         builder: (context, state) {
           if (state.isLoading) {
-            return const Center(child: LoadingDialog());
+            return Center(child: buildLoadingDialog(context));
           }
           if (state is EventStateLoaded) {
             final events = state.allEvents;
