@@ -1,0 +1,23 @@
+# Set the platform to 15.0 to satisfy cloud_firestore requirements
+platform :ios, '15.0'
+
+# This helper line is critical - it tells CocoaPods how to find Flutter plugins
+install_all_flutter_pods = File.join(File.dirname(File.realpath(__FILE__)), '..', '.flutter-plugins-dependencies')
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+
+  # This replaces the line that was causing the error
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+end
+
+# This script ensures every plugin in your project also targets iOS 15.0
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+    end
+  end
+end
