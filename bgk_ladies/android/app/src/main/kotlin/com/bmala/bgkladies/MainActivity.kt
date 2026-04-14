@@ -1,4 +1,4 @@
-package com.bmala.bgkladies.bgk_ladies
+package com.bmala.bgkladies
 
 import io.flutter.embedding.android.FlutterActivity
 

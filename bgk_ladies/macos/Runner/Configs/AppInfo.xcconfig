@@ -8,7 +8,7 @@
 PRODUCT_NAME = bgk_ladies
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.bmala.bgkladies.bgkLadies
+PRODUCT_BUNDLE_IDENTIFIER = com.bmala.bgkladies
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.bmala.bgkladies. All rights reserved.

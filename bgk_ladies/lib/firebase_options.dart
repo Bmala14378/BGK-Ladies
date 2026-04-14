@@ -42,7 +42,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyBqHKc9H-3_m5sbKDX0jgDvjb_sobf6KMQ',
-    appId: '1:685895588413:web:62e04b677bd82dbf5fe854',
+    appId: '1:685895588413:web:22ff24d341bb21e65fe854',
     messagingSenderId: '685895588413',
     projectId: 'bgk-ladies-attendance',
     authDomain: 'bgk-ladies-attendance.firebaseapp.com',
@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDlcG2v5fGA8OOQIMPiUWpbkDkaUf1OcIY',
-    appId: '1:685895588413:android:75d025b3d87966c35fe854',
+    appId: '1:685895588413:android:b3c4b44dd7dd0c185fe854',
     messagingSenderId: '685895588413',
     projectId: 'bgk-ladies-attendance',
     storageBucket: 'bgk-ladies-attendance.firebasestorage.app',
@@ -59,24 +59,24 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyApu0ApymwlH9mkJNlICc_UJd_ggjIpHtk',
-    appId: '1:685895588413:ios:b691425afac6578c5fe854',
+    appId: '1:685895588413:ios:b9138fd0279e2e275fe854',
     messagingSenderId: '685895588413',
     projectId: 'bgk-ladies-attendance',
     storageBucket: 'bgk-ladies-attendance.firebasestorage.app',
     androidClientId: '685895588413-1q8lq05kqtiptoqa809fg4ao1sftm0aq.apps.googleusercontent.com',
-    iosClientId: '685895588413-ama4eml9tuk8o9g2b2j1u5skumm17fou.apps.googleusercontent.com',
-    iosBundleId: 'com.bmala.bgkladies.bgkLadies',
+    iosClientId: '685895588413-dd6aejj3a6rqkufirdhmo06cjro4eiec.apps.googleusercontent.com',
+    iosBundleId: 'com.bmala.bgkladies',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyApu0ApymwlH9mkJNlICc_UJd_ggjIpHtk',
-    appId: '1:685895588413:ios:b691425afac6578c5fe854',
+    appId: '1:685895588413:ios:b9138fd0279e2e275fe854',
     messagingSenderId: '685895588413',
     projectId: 'bgk-ladies-attendance',
     storageBucket: 'bgk-ladies-attendance.firebasestorage.app',
     androidClientId: '685895588413-1q8lq05kqtiptoqa809fg4ao1sftm0aq.apps.googleusercontent.com',
-    iosClientId: '685895588413-ama4eml9tuk8o9g2b2j1u5skumm17fou.apps.googleusercontent.com',
-    iosBundleId: 'com.bmala.bgkladies.bgkLadies',
+    iosClientId: '685895588413-dd6aejj3a6rqkufirdhmo06cjro4eiec.apps.googleusercontent.com',
+    iosBundleId: 'com.bmala.bgkladies',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
@@ -87,4 +87,5 @@ class DefaultFirebaseOptions {
     authDomain: 'bgk-ladies-attendance.firebaseapp.com',
     storageBucket: 'bgk-ladies-attendance.firebasestorage.app',
   );
+
 }

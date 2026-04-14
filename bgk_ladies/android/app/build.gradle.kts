@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.bmala.bgkladies.bgk_ladies"
+    namespace = "com.bmala.bgkladies"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -24,7 +24,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.bmala.bgkladies.bgk_ladies"
+        applicationId = "com.bmala.bgkladies"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
