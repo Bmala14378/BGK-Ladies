@@ -25,3 +25,11 @@ class EventStateCurrentEventDisabled extends EventBlocState {
   final String message;
   const EventStateCurrentEventDisabled(this.message) : super(isLoading: false);
 }
+
+class EventBlocStateError extends EventBlocState {
+  final String errorMessage;
+  const EventBlocStateError({
+    required this.errorMessage,
+    required super.isLoading,
+  });
+}

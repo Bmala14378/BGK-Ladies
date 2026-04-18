@@ -34,9 +34,7 @@ class _LoginViewState extends State<LoginView> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthBlocFunc, AuthBlocState>(
-      listener: (context, state) {
-        //TODO: Handle errors or success navigation here if needed
-      },
+      listener: (context, state) {},
       builder: (context, state) {
         return Scaffold(
           body: Container(
@@ -110,17 +108,8 @@ class _LoginViewState extends State<LoginView> {
                             keyboardType: TextInputType.number,
                             maxLength: 8,
                             decoration: InputDecoration(
-                              prefixIcon: const Icon(
-                                Icons.badge_outlined,
-                                color: Colors.purple,
-                              ),
+                              prefixIcon: const Icon(Icons.badge_outlined),
                               hintText: 'Enter your ITS number',
-                              filled: true,
-                              fillColor: Colors.purple[50]?.withAlpha(200),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide.none,
-                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -131,16 +120,12 @@ class _LoginViewState extends State<LoginView> {
                             obscureText: !_isPasswordVisible,
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
-                              prefixIcon: const Icon(
-                                Icons.lock_outline,
-                                color: Colors.purple,
-                              ),
+                              prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _isPasswordVisible
                                       ? Icons.visibility
                                       : Icons.visibility_off,
-                                  color: Colors.grey,
                                 ),
                                 onPressed: () => setState(
                                   () =>
@@ -148,12 +133,6 @@ class _LoginViewState extends State<LoginView> {
                                 ),
                               ),
                               hintText: 'Enter your password',
-                              filled: true,
-                              fillColor: Colors.purple[50]?.withAlpha(200),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide.none,
-                              ),
                             ),
                           ),
                           const SizedBox(height: 30),
@@ -163,13 +142,6 @@ class _LoginViewState extends State<LoginView> {
                             width: double.infinity,
                             height: 55,
                             child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.purple[800],
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                elevation: 0,
-                              ),
                               onPressed: state.isLoading
                                   ? null
                                   : () {

@@ -34,16 +34,9 @@ class AuthBlocStateLoggedOut extends AuthBlocState {
   });
 }
 
-class AuthBlocStateRegistering extends AuthBlocState {
-  final Exception? exception;
-  const AuthBlocStateRegistering({
-    required this.exception,
-    required super.isLoading,
-  });
-}
-
 class AuthBlocRegistered extends AuthBlocState {
-  const AuthBlocRegistered({required super.isLoading});
+  final UserModel? user;
+  const AuthBlocRegistered({required super.isLoading, required this.user});
 }
 
 class AuthBlocStateNavigatingToLogin extends AuthBlocState {
@@ -51,10 +44,30 @@ class AuthBlocStateNavigatingToLogin extends AuthBlocState {
 }
 
 class AuthBlocStateNavigatingToRegister extends AuthBlocState {
-  const AuthBlocStateNavigatingToRegister({required super.isLoading});
+  final UserModel user;
+
+  const AuthBlocStateNavigatingToRegister({
+    required super.isLoading,
+    super.loadingMessage,
+    required this.user,
+  });
 }
 
 class AuthBlocStatesNavigatingToDash extends AuthBlocState {
   final UserModel user;
-  const AuthBlocStatesNavigatingToDash({required super.isLoading, required this.user});
+  const AuthBlocStatesNavigatingToDash({
+    required super.isLoading,
+    required this.user,
+  });
+}
+
+class AuthBlocStateError extends AuthBlocState {
+  final String exception;
+  final UserModel? currentUser;
+
+  const AuthBlocStateError({
+    required super.isLoading,
+    required this.exception,
+    required this.currentUser,
+  });
 }

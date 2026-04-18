@@ -15,15 +15,6 @@ class AppointBlocStateLoading extends AppointBlocState {
   const AppointBlocStateLoading();
 }
 
-class AppointBlocStateEventSelected extends AppointBlocState {
-  final String eventId;
-  final List<EventModel> activeEvents;
-  const AppointBlocStateEventSelected({
-    required this.eventId,
-    required this.activeEvents,
-  });
-}
-
 class AppointBlocStateAppointmentSubmitted extends AppointBlocState {
   const AppointBlocStateAppointmentSubmitted();
 }
@@ -31,4 +22,16 @@ class AppointBlocStateAppointmentSubmitted extends AppointBlocState {
 class AppointBlocStateError extends AppointBlocState {
   final String errorMessage;
 const AppointBlocStateError({required this.errorMessage});
+}
+
+class AppointBlocStateEventSelected extends AppointBlocState {
+  final String eventId;
+  final List<EventModel> activeEvents;
+  final List<String> appointedItsNumbers; // Added this field
+
+  const AppointBlocStateEventSelected({
+    required this.eventId,
+    required this.activeEvents,
+    required this.appointedItsNumbers,
+  });
 }

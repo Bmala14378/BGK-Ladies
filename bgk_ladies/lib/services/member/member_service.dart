@@ -1,3 +1,5 @@
+import 'dart:developer' as devtools;
+
 import 'package:bgk_ladies/enums/user_role_enum.dart';
 import 'package:bgk_ladies/models/member_model.dart';
 
@@ -5,6 +7,25 @@ import 'package:bgk_ladies/repo/member/member_repo.dart';
 
 class MemberService {
   final repo = MemberRepository();
+
+  Future<bool> isMember({required int itsNo}) async {
+    try {
+      final data = await repo.getMemberByIts(itsNo: itsNo);
+
+      if (data != null) {
+        return true;
+      } else {
+        devtools.log("Memeber NOt Found");
+        return false;
+      }
+    } on Exception catch (e) {
+      if (e.toString() == "Member Not Found") {
+        return false;
+      }
+      return false;
+    }
+  }
+
   Future<MemberModel> getCurrentMemberInfo({required int itsNo}) async {
     final data = await repo.getMemberByIts(itsNo: itsNo);
 

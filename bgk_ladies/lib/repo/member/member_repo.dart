@@ -15,7 +15,7 @@ class MemberRepository {
         return doc.data();
       } else {
         devtools.log("Member with ITS number $itsNo not found in database");
-        throw Exception("Member not found");
+        return null;
       }
     } catch (e) {
       devtools.log("Error fetching personal info: $e");

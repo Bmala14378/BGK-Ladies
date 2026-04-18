@@ -1,3 +1,4 @@
+import 'package:bgk_ladies/themes.dart';
 import 'package:flutter/material.dart';
 
 class StatCard extends StatelessWidget {
@@ -41,18 +42,22 @@ class StatCard extends StatelessWidget {
     // );
     return Card(
       elevation: 2,
-      color: const Color.fromARGB(255, 234, 221, 250),
+      color: AppTheme.primaryLight,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(15),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.purple),
+            Icon(icon, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 5),
             Text(
               value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
             Text(
               label,

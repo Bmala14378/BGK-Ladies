@@ -13,4 +13,8 @@ class AppointService {
       selectedMembers: selectedMembers,
     );
   }
+
+  Stream<List<String>> getAppointedItsNumbers(String eventId) {
+    return repo.getAppointedItsNumbersStream(eventId);
+  }
 }

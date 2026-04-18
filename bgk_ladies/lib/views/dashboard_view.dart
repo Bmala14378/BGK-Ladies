@@ -54,10 +54,12 @@ class DashboardView extends StatelessWidget {
       if (memberState is LoadedMemberBlocState) {
         // Use the pre-fetched profile directly from the state!
         final myInfo = memberState.userProfile;
+        final myMembers = memberState.members;
         final totalMembers = memberState.members.length;
         return DashboardViewWidget(
           currentUser: currentUser!,
           myInfo: myInfo!,
+          myMembers: myMembers,
           totalMembers: totalMembers,
           eventId: context.read<EventBloc>().state is EventStateLoaded
               ? (context.read<EventBloc>().state as EventStateLoaded)
@@ -66,11 +68,33 @@ class DashboardView extends StatelessWidget {
                     .eventId
               : "",
         );
-      } else if (memberState is MemberStateError) {
+      } else if (memberState is MemberStateError &&
+          memberState.errorMessage != "") {
         devtools.log(
           "MemberBloc is still loading or failed to load. Current state: ${memberState.errorMessage}",
         );
-        return Scaffold(body: Center(child: buildLoadingDialog(context)));
+        Future.delayed(Duration(seconds: 1));
+        return Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                const SizedBox(height: 16),
+                Text(memberState.errorMessage),
+                TextButton(
+                  onPressed: () {
+                    // Trigger a retry
+                    context.read<MemberBloc>().add(
+                      MemberBlocEventInitialize(user: currentUser!),
+                    );
+                  },
+                  child: const Text("Retry"),
+                ),
+              ],
+            ),
+          ),
+        );
       } else {
         devtools.log(
           "MemberBloc is still loading. Current state: ${memberState.runtimeType}",
@@ -86,6 +110,7 @@ class DashboardView extends StatelessWidget {
 class DashboardViewWidget extends StatelessWidget {
   final MemberModel myInfo;
   final int totalMembers;
+  final List<MemberModel> myMembers;
   final UserModel currentUser;
   final String eventId;
   const DashboardViewWidget({
@@ -94,20 +119,18 @@ class DashboardViewWidget extends StatelessWidget {
     required this.myInfo,
     required this.totalMembers,
     required this.eventId,
+    required this.myMembers,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Dashboard",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: Colors.purple,
+        title: const Text("Dashboard"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
+            icon: const Icon(Icons.logout),
             onPressed: () {
               context.read<AttendBloc>().add(const AttendBlocEventReset());
               context.read<AppointBloc>().add(const AppointBlocEventReset());
@@ -118,190 +141,209 @@ class DashboardViewWidget extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.purple.withAlpha(20),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.purple.withAlpha(50)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.purple.withAlpha(10),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          context.read<AttendBloc>().add(
+            const AttendBlocEventFetchActiveEvents(),
+          );
+          context.read<MemberBloc>().add(
+            MemberBlocEventInitialize(user: currentUser),
+          );
+          context.read<EventBloc>().add(EventBlocEventInitialize());
+        },
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withAlpha(20),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colorScheme.primary.withAlpha(50)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withAlpha(10),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    "Welcome Back, ${myInfo.name} !",
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "Quick Stats",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+
+              // 1. Stats Ribbon (Horizontal Cards)
+              Row(
+                children: [
+                  Expanded(
+                    child: StatCard(
+                      label: "Total Members",
+                      value: totalMembers.toString(),
+                      icon: Icons.people,
+                    ),
+                  ),
+                  // const SizedBox(width: 10),
+                  // const Expanded(
+                  //   child: StatCard(
+                  //     label: "Active Markaz",
+                  //     value: "4",
+                  //     icon: Icons.location_on,
+                  //   ),
+                  // ),
                 ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  "Welcome Back, ${myInfo.name} !",
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              const SizedBox(height: 25),
+
+              // 2. Quick Actions (Conditional Buttons)
+              Text(
+                "Quick Actions",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Quick Stats",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-
-            // 1. Stats Ribbon (Horizontal Cards)
-            Row(
-              children: [
-                Expanded(
-                  child: StatCard(
-                    label: "Total Members",
-                    value: totalMembers.toString(),
-                    icon: Icons.people,
-                  ),
+              SizedBox(height: 16),
+              Scrollable(
+                axisDirection: AxisDirection.right,
+                scrollBehavior: const ScrollBehavior().copyWith(
+                  scrollbars: false,
                 ),
-                const SizedBox(width: 10),
-                // const Expanded(
-                //   child: StatCard(
-                //     label: "Active Markaz",
-                //     value: "4",
-                //     icon: Icons.location_on,
-                //   ),
-                // ),
-              ],
-            ),
-            const SizedBox(height: 25),
+                viewportBuilder: (context, position) {
+                  return GridView.count(
+                    crossAxisCount: 2, // 2 columns
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1.7,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      if (currentUser.canManageEvents)
+                        QuickActionButton(
+                          icon: Icons.event,
+                          label: "Manage Events",
+                          onPressed: () {
+                            Navigator.pushNamed(context, eventManagementRoute);
+                          },
+                        ),
 
-            // 2. Quick Actions (Conditional Buttons)
-            Text(
-              "Quick Actions",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16),
-            Scrollable(
-              axisDirection: AxisDirection.right,
-              scrollBehavior: const ScrollBehavior().copyWith(
-                scrollbars: false,
-              ),
-              viewportBuilder: (context, position) {
-                return GridView.count(
-                  crossAxisCount: 2, // 2 columns
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.7,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    if (currentUser.canManageEvents)
-                      QuickActionButton(
-                        icon: Icons.event,
-                        label: "Manage Events",
-                        onPressed: () {
-                          Navigator.pushNamed(context, eventManagementRoute);
-                        },
-                      ),
+                      // if (currentUser.canViewReports)
+                      //   QuickActionButton(
+                      //     //TODO: Implement reports view
+                      //     icon: Icons.bar_chart,
+                      //     label: "View Reports",
+                      //     onPressed: () {},
+                      //   ),
+                      if (currentUser.canAppoint)
+                        QuickActionButton(
+                          icon: Icons.assignment_ind,
+                          label: "Appoint",
+                          onPressed: () {
+                            final memberState = context
+                                .read<MemberBloc>()
+                                .state;
 
-                    if (currentUser.canViewReports)
-                      QuickActionButton(
-                        //TODO: Implement reports view
-                        icon: Icons.bar_chart,
-                        label: "View Reports",
-                        onPressed: () {},
-                      ),
+                            if (memberState is LoadedMemberBlocState) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      AppointView(members: memberState.members),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Please wait, members are still loading...',
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
 
-                    if (currentUser.canAppoint)
-                      QuickActionButton(
-                        icon: Icons.assignment_ind,
-                        label: "Appoint",
-                        onPressed: () {
-                          final memberState = context.read<MemberBloc>().state;
-
-                          if (memberState is LoadedMemberBlocState) {
+                      if (currentUser.canMarkAttendance)
+                        QuickActionButton(
+                          icon: Icons.check_circle,
+                          label: "Mark Attendance",
+                          onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    AppointView(members: memberState.members),
+                                builder: (context) => AttendanceView(),
                               ),
                             );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Please wait, members are still loading...',
-                                ),
+                          },
+                        ),
+
+                      if (currentUser.canCreateUser)
+                        QuickActionButton(
+                          icon: Icons.person_add,
+                          label: "Create User",
+                          onPressed: () {
+                            context.read<AuthBlocFunc>().add(
+                              AuthBlocEventNavigateToRegister(
+                                user: currentUser,
                               ),
                             );
-                          }
-                        },
-                      ),
-
-                    if (currentUser.canMarkAttendance)
-                      QuickActionButton(
-                        icon: Icons.check_circle,
-                        label: "Mark Attendance",
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AttendanceView(),
-                            ),
-                          );
-                        },
-                      ),
-
-                    if (currentUser.canCreateUser)
-                      QuickActionButton(
-                        icon: Icons.person_add,
-                        label: "Create User",
-                        onPressed: () {
-                          Navigator.pushNamed(context, registerRoute);
-                        },
-                      ),
-                  ],
-                );
-              },
-            ),
-
-            const SizedBox(height: 25),
-            const Text(
-              "Active Events",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-
-            // 2. Active Events List (Driven by EventBloc)
-            BlocBuilder<EventBloc, EventBlocState>(
-              builder: (context, state) {
-                if (state.isLoading) {
-                  return Center(child: buildLoadingDialog(context));
-                }
-                if (state is EventStateLoaded) {
-                  final activeEvents = state.activeEvents;
-
-                  if (activeEvents.isEmpty) {
-                    return buildEmptyState();
-                  }
-
-                  return ListView.builder(
-                    shrinkWrap: true, // Critical for Column usage
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: activeEvents.length,
-                    itemBuilder: (context, index) {
-                      final event = activeEvents[index];
-                      return EventCard(event: event);
-                    },
+                          },
+                        ),
+                    ],
                   );
-                }
-                return const Text("Unable to load events.");
-              },
-            ),
-          ],
+                },
+              ),
+
+              const SizedBox(height: 25),
+              const Text(
+                "Active Events",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+
+              // 2. Active Events List (Driven by EventBloc)
+              BlocBuilder<EventBloc, EventBlocState>(
+                builder: (context, state) {
+                  if (state.isLoading) {
+                    return Center(child: buildLoadingDialog(context));
+                  }
+                  if (state is EventStateLoaded) {
+                    final activeEvents = state.activeEvents;
+
+                    if (activeEvents.isEmpty) {
+                      return buildEmptyState();
+                    }
+
+                    return ListView.builder(
+                      shrinkWrap: true, // Critical for Column usage
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: activeEvents.length,
+                      itemBuilder: (context, index) {
+                        final event = activeEvents[index];
+                        return EventCard(
+                          event: event,
+                          myGroupMembers: myMembers,
+                        );
+                      },
+                    );
+                  }
+                  return const Text("Unable to load events.");
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

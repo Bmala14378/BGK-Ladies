@@ -43,4 +43,15 @@ class AppointRepository {
       throw Exception("Failed to appoint member");
     }
   }
+
+  Stream<List<String>> getAppointedItsNumbersStream(String eventId) {
+    return _db
+        .collection(Vars.eventCollection_Var)
+        .doc(eventId)
+        .collection(Vars.attendanceCollection_Var)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) => doc.id).toList();
+        });
+  }
 }

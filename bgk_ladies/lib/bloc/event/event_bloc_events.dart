@@ -1,4 +1,3 @@
-import 'package:bgk_ladies/models/event_model.dart';
 import 'package:flutter/foundation.dart';
 
 @immutable
@@ -8,11 +7,6 @@ abstract class EventBlocEvent {
 
 class EventBlocEventInitialize extends EventBlocEvent {
   const EventBlocEventInitialize();
-}
-
-class EventBlocEventUpdateList extends EventBlocEvent {
-  final List<EventModel> allEvents;
-  const EventBlocEventUpdateList(this.allEvents);
 }
 
 class EventBlocEventSelectEvent extends EventBlocEvent {
@@ -31,4 +25,23 @@ class EventBlocEventUpdateTitle extends EventBlocEvent {
 
 class EventBlocEventReset extends EventBlocEvent {
   const EventBlocEventReset();
+}
+
+class EventBlocEventCreate extends EventBlocEvent {
+  final String eventName;
+  const EventBlocEventCreate({required this.eventName});
+}
+
+class EventBlocEventDelete extends EventBlocEvent {
+  final String eventId;
+  const EventBlocEventDelete({required this.eventId});
+}
+
+class EventBlocEventStatusChange extends EventBlocEvent {
+  final String eventId;
+  final bool isactive;
+  const EventBlocEventStatusChange({
+    required this.eventId,
+    required this.isactive,
+  });
 }

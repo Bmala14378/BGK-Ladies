@@ -42,7 +42,8 @@ class AuthBlocEventRegister extends AuthBlocEvent {
 }
 
 class AuthBlocEventNavigateToRegister extends AuthBlocEvent {
-  const AuthBlocEventNavigateToRegister();
+  final UserModel user;
+  const AuthBlocEventNavigateToRegister({required this.user});
 }
 
 class AuthBlocEventNavigateToDash extends AuthBlocEvent {

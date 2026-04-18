@@ -1,4 +1,4 @@
-// ignore_for_file: unused_import
+// ignore_for_file: use_build_context_synchronously, unused_import
 
 import 'package:bgk_ladies/bloc/appoint/appoint_bloc_event.dart';
 import 'package:bgk_ladies/bloc/appoint/appoint_bloc_func.dart';
@@ -14,6 +14,7 @@ import 'package:bgk_ladies/bloc/member/member_bloc_events.dart';
 import 'package:bgk_ladies/bloc/member/member_bloc_func.dart';
 import 'package:bgk_ladies/enums/status_enum.dart';
 import 'package:bgk_ladies/models/event_model.dart';
+import 'package:bgk_ladies/themes.dart';
 import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,6 +27,7 @@ class AttendanceView extends StatefulWidget {
 }
 
 class _AttendanceViewState extends State<AttendanceView> {
+  bool _sortByGroupLeader = false;
   String _searchQuery = "";
   // 1. ADD: Local map for batch updates
   final Map<String, StatusEnum> _pendingUpdates = {};
@@ -42,156 +44,177 @@ class _AttendanceViewState extends State<AttendanceView> {
         ? authState.user.markaz
         : null;
 
-    return Scaffold(
-      // 3. ADD: Submit Button
-      floatingActionButton: _pendingUpdates.isNotEmpty
-          ? FloatingActionButton.extended(
-              backgroundColor: Colors.purple[800],
-              onPressed: () {
-                final state = context.read<AttendBloc>().state;
-                if (state is AttendBlocStateLoaded) {
-                  context.read<AttendBloc>().add(
-                    AttendBlocEventSubmitBatch(
-                      eventId: state.eventId,
-                      attendanceUpdates: _pendingUpdates,
-                    ),
-                  );
-                }
-              },
-              icon: const Icon(Icons.cloud_upload, color: Colors.white),
-              label: Text(
-                "Save ${_pendingUpdates.length} Changes",
-                style: const TextStyle(color: Colors.white),
-              ),
-            )
-          : null,
-      // 2. CHANGE: BlocBuilder to BlocConsumer for listener support
-      body: BlocConsumer<AttendBloc, AttendBlocState>(
-        listener: (context, state) {
-          if (state is AttendBlocStateSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Attendance saved successfully!"),
-                backgroundColor: Colors.green,
-              ),
-            );
-            setState(() => _pendingUpdates.clear());
-            context.read<AttendBloc>().add(
-              const AttendBlocEventFetchActiveEvents(),
-            );
-          } else if (state is AttendBlocStateError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          List<EventModel> events = [];
-          String? selectedEventId;
-
-          if (state is AttendBlocStateInitial) {
-            events = state.activeEvents;
-          } else if (state is AttendBlocStateLoading) {
-            events = state.activeEvents ?? [];
-            selectedEventId = state.eventId;
-          } else if (state is AttendBlocStateLoaded) {
-            events = state.activeEvents;
-            selectedEventId = state.eventId;
-          }
-
-          return CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                title: const Text(
-                  "Mark Attendance",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                backgroundColor: Colors.purple[800],
-                floating: true,
-                snap: true,
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.white),
-                    onPressed: () => context.read<AttendBloc>().add(
-                      const AttendBlocEventFetchActiveEvents(),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
+    return BlocConsumer<AttendBloc, AttendBlocState>(
+      listener: (context, state) {
+        if (state is AttendBlocStateError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          // 3. ADD: Submit Button
+          floatingActionButton: _pendingUpdates.isNotEmpty
+              ? FloatingActionButton.extended(
+                  backgroundColor: Colors.purple[800],
+                  onPressed: () {
+                    final state = context.read<AttendBloc>().state;
+                    if (state is AttendBlocStateLoaded) {
                       context.read<AttendBloc>().add(
-                        const AttendBlocEventReset(),
+                        AttendBlocEventSubmitBatch(
+                          eventId: state.eventId,
+                          attendanceUpdates: _pendingUpdates,
+                        ),
                       );
-                      context.read<AuthBlocFunc>().add(
-                        const AuthBlocEventLogOut(),
-                      );
-                    },
-                    icon: const Icon(Icons.logout, color: Colors.white),
+                    }
+                  },
+                  icon: const Icon(Icons.cloud_upload, color: Colors.white),
+                  label: Text(
+                    "Save ${_pendingUpdates.length} Changes",
+                    style: const TextStyle(color: Colors.white),
                   ),
-                ],
-                bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(80.0),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
-                    child: Container(
-                      decoration: BoxDecoration(
+                )
+              : null,
+          // 2. CHANGE: BlocBuilder to BlocConsumer for listener support
+          body: BlocConsumer<AttendBloc, AttendBlocState>(
+            listener: (context, state) {
+              if (state is AttendBlocStateSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Attendance saved successfully!"),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                setState(() => _pendingUpdates.clear());
+                context.read<AttendBloc>().add(
+                  const AttendBlocEventFetchActiveEvents(),
+                );
+              } else if (state is AttendBlocStateError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.errorMessage),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            builder: (context, state) {
+              List<EventModel> events = [];
+              String? selectedEventId;
+
+              if (state is AttendBlocStateInitial) {
+                events = state.activeEvents;
+              } else if (state is AttendBlocStateLoading) {
+                events = state.activeEvents ?? [];
+                selectedEventId = state.eventId;
+              } else if (state is AttendBlocStateLoaded) {
+                events = state.activeEvents;
+                selectedEventId = state.eventId;
+              }
+
+              return CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    title: const Text(
+                      "Mark Attendance",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(8.0),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButtonFormField(
-                          initialValue: selectedEventId,
-                          icon: Icon(Icons.event, color: Colors.purple[800]),
-                          isExpanded: true,
-                          hint: const Text(
-                            "Please Select an Event",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: Colors.purple[800],
+                    floating: true,
+                    snap: true,
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.refresh, color: Colors.white),
+                        onPressed: () => context.read<AttendBloc>().add(
+                          const AttendBlocEventFetchActiveEvents(),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () async {
+                          final shouldPop = await _showExitDialog(context);
+                          if (shouldPop) {
+                            context.read<AttendBloc>().add(
+                              const AttendBlocEventReset(),
+                            );
+                            context.read<AuthBlocFunc>().add(
+                              const AuthBlocEventLogOut(),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.logout, color: Colors.white),
+                      ),
+                    ],
+                    bottom: PreferredSize(
+                      preferredSize: const Size.fromHeight(80.0),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8.0),
                           ),
-                          items: events
-                              .map(
-                                (event) => DropdownMenuItem(
-                                  value: event.eventId,
-                                  child: Text(event.eventName),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null && userMarkaz != null) {
-                              // 4. ADD: Clear local state on event change
-                              setState(() => _pendingUpdates.clear());
-                              context.read<AttendBloc>().add(
-                                AttendBlocEventFetchAttendance(
-                                  eventId: value,
-                                  markaz: userMarkaz,
-                                ),
-                              );
-                            }
-                          },
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButtonFormField(
+                              initialValue: selectedEventId,
+                              icon: Icon(
+                                Icons.event,
+                                color: Colors.purple[800],
+                              ),
+                              isExpanded: true,
+                              hint: const Text(
+                                "Please Select an Event",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              items: events
+                                  .map(
+                                    (event) => DropdownMenuItem(
+                                      value: event.eventId,
+                                      child: Text(event.eventName),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                if (value != null && userMarkaz != null) {
+                                  // 4. ADD: Clear local state on event change
+                                  setState(() => _pendingUpdates.clear());
+                                  context.read<AttendBloc>().add(
+                                    AttendBlocEventFetchAttendance(
+                                      eventId: value,
+                                      markaz: userMarkaz,
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              if (state is AttendBlocStateLoading && state.eventId != null ||
-                  state is AttendBlocStateSubmitting)
-                SliverFillRemaining(
-                  child: Center(child: buildLoadingDialog(context)),
-                )
-              else if (selectedEventId == null)
-                const SliverToBoxAdapter(child: SizedBox.shrink())
-              else if (state is AttendBlocStateLoaded)
-                ..._buildLoadedContent(state),
-            ],
-          );
-        },
-      ),
+                  if (state is AttendBlocStateLoading &&
+                          state.eventId != null ||
+                      state is AttendBlocStateSubmitting)
+                    SliverFillRemaining(
+                      child: Center(child: buildLoadingDialog(context)),
+                    )
+                  else if (selectedEventId == null)
+                    const SliverToBoxAdapter(child: SizedBox.shrink())
+                  else if (state is AttendBlocStateLoaded)
+                    ..._buildLoadedContent(state),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -201,6 +224,10 @@ class _AttendanceViewState extends State<AttendanceView> {
       return member.name.toLowerCase().contains(query) ||
           member.itsNumber.contains(query);
     }).toList();
+
+    if (_sortByGroupLeader) {
+      filteredList.sort((a, b) => a.glName.compareTo(b.glName));
+    }
 
     // Stats now include local pending updates for real-time accuracy
     final total = state.attendanceList.length;
@@ -219,43 +246,63 @@ class _AttendanceViewState extends State<AttendanceView> {
         pinned: true,
         delegate: _StickyHeaderDelegate(
           height: 195.0,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: SizedBox(
-                  height: 50,
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: "Search by name or ITS...",
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+          child: Expanded(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: SizedBox(
+                    height: 50,
+                    child: TextField(
+                      decoration: InputDecoration(
+                        suffixIcon: IconButton(
+                          tooltip: "Sort By Group Leader",
+                          onPressed: () {
+                            if (_sortByGroupLeader) {
+                              setState(() {
+                                _sortByGroupLeader = false;
+                              });
+                            } else if (!_sortByGroupLeader) {
+                              setState(() {
+                                _sortByGroupLeader = true;
+                              });
+                            }
+                          },
+                          icon: _sortByGroupLeader
+                              ? Icon(Icons.filter_alt_rounded)
+                              : Icon(Icons.filter_alt_off_rounded),
+                        ),
+                        hintText: "Search by name or ITS...",
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
+                      onChanged: (value) =>
+                          setState(() => _searchQuery = value),
                     ),
-                    onChanged: (value) => setState(() => _searchQuery = value),
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildStatItem("Total", total, Colors.blueGrey),
+                      _buildStatItem("Present", present, Colors.green),
+                      _buildStatItem("Late", late, Colors.yellow[800]!),
+                      _buildStatItem("Absent", absent, Colors.red),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatItem("Total", total, Colors.blueGrey),
-                    _buildStatItem("Present", present, Colors.green),
-                    _buildStatItem("Late", late, Colors.yellow[800]!),
-                    _buildStatItem("Absent", absent, Colors.red),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              _buildListHeader(),
-              const Divider(height: 1),
-            ],
+                const Divider(height: 1),
+                _buildListHeader(),
+                const Divider(height: 1),
+              ],
+            ),
           ),
         ),
       ),
@@ -298,7 +345,14 @@ class _AttendanceViewState extends State<AttendanceView> {
                   ],
                 ],
               ),
-              subtitle: Text(member.itsNumber),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("ITS: ${member.itsNumber}"),
+                  Text("Group: ${member.glName}"),
+                ],
+              ),
+              isThreeLine: true,
               trailing: SizedBox(
                 width: 125,
                 child: Row(
@@ -306,21 +360,21 @@ class _AttendanceViewState extends State<AttendanceView> {
                   children: [
                     _statusIcon(
                       StatusEnum.present,
-                      Colors.green,
+                      AppTheme.statusPresent,
                       currentStatus,
                       member.itsNumber,
                       isDirty,
                     ),
                     _statusIcon(
                       StatusEnum.late,
-                      Colors.orange,
+                      AppTheme.statusLate,
                       currentStatus,
                       member.itsNumber,
                       isDirty,
                     ),
                     _statusIcon(
                       StatusEnum.absent,
-                      Colors.red,
+                      AppTheme.statusAbsent,
                       currentStatus,
                       member.itsNumber,
                       isDirty,
@@ -446,7 +500,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: Colors.green,
+                    color: AppTheme.statusPresent,
                   ),
                 ),
                 Text(
@@ -454,7 +508,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: Colors.yellow[800]!,
+                    color: AppTheme.statusLate,
                   ),
                 ),
                 const Text(
@@ -462,7 +516,7 @@ class _AttendanceViewState extends State<AttendanceView> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                    color: AppTheme.statusAbsent,
                   ),
                 ),
               ],
@@ -471,6 +525,29 @@ class _AttendanceViewState extends State<AttendanceView> {
         ],
       ),
     );
+  }
+
+  Future<bool> _showExitDialog(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Unsaved Changes"),
+            content: const Text(
+              "You will lose all your unsaved attendance. Are you sure you want to leave?",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false), // Stay on page
+                child: const Text("Stay"),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true), // Leave page
+                child: const Text("Leave"),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 }
 

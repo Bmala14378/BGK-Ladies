@@ -1,8 +1,12 @@
+// ignore: unused_import
+import 'dart:developer' as devtools;
+
 import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
 import 'package:bgk_ladies/enums/markaz_enum.dart';
 import 'package:bgk_ladies/enums/user_role_enum.dart';
+import 'package:bgk_ladies/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -39,6 +43,11 @@ class _RegisterViewState extends State<RegisterView> {
     return BlocConsumer<AuthBlocFunc, AuthBlocState>(
       listener: (context, state) {},
       builder: (context, state) {
+        context.watch<AuthBlocFunc>();
+        UserModel? user;
+        if (state is AuthBlocStateNavigatingToRegister) user = state.user;
+        if (state is AuthBlocStateError) user = state.currentUser;
+        if (state is AuthBlocRegistered) user = state.user;
         return Scaffold(
           body: Stack(
             children: [
@@ -62,18 +71,13 @@ class _RegisterViewState extends State<RegisterView> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.person_add_outlined,
-                          size: 60,
-                          color: Colors.purple[800],
-                        ),
+                        Icon(Icons.person_add_outlined, size: 60),
                         const SizedBox(height: 12),
                         Text(
                           "Create Account",
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.purple[900],
                           ),
                         ),
                         const SizedBox(height: 30),
@@ -97,16 +101,14 @@ class _RegisterViewState extends State<RegisterView> {
                             children: [
                               const Text(
                                 "Personal Details",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.purple,
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 16),
 
                               TextField(
                                 controller: itsNumberController,
                                 keyboardType: TextInputType.number,
+                                maxLength: 8,
                                 decoration: _buildInputDecoration(
                                   "ITS Number",
                                   Icons.badge_outlined,
@@ -117,6 +119,7 @@ class _RegisterViewState extends State<RegisterView> {
                               TextField(
                                 controller: passwordController,
                                 obscureText: !_isPasswordVisible,
+                                keyboardType: TextInputType.number,
                                 decoration:
                                     _buildInputDecoration(
                                       "Password",
@@ -143,14 +146,12 @@ class _RegisterViewState extends State<RegisterView> {
 
                               const Text(
                                 "Role & Assignment",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.purple,
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 16),
 
                               DropdownButtonFormField<UserRoleEnum>(
+                                initialValue: _selectedRole,
                                 decoration: _buildInputDecoration(
                                   "Select Role",
                                   Icons.assignment_ind_outlined,
@@ -170,6 +171,7 @@ class _RegisterViewState extends State<RegisterView> {
                                 const SizedBox(height: 16),
 
                                 DropdownButtonFormField<MarkazEnum>(
+                                  initialValue: _selectedMarkaz,
                                   decoration: _buildInputDecoration(
                                     "Select Markaz",
                                     Icons.location_on_outlined,
@@ -191,7 +193,6 @@ class _RegisterViewState extends State<RegisterView> {
                                 height: 55,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.purple[800],
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(15),
                                     ),
@@ -255,12 +256,15 @@ class _RegisterViewState extends State<RegisterView> {
                 child: Padding(
                   padding: const EdgeInsets.only(left: 10, top: 10),
                   child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.purple,
-                    ),
+                    icon: const Icon(Icons.arrow_back_ios_new),
                     onPressed: () {
-                      Navigator.of(context).pop();
+                      if (user != null) {
+                        context.read<AuthBlocFunc>().add(
+                          AuthBlocEventNavigateToDash(user: user),
+                        );
+                      } else {
+                        Navigator.of(context).pop();
+                      }
                     },
                   ),
                 ),
@@ -273,16 +277,7 @@ class _RegisterViewState extends State<RegisterView> {
   }
 
   InputDecoration _buildInputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: Colors.purple),
-      filled: true,
-      fillColor: Colors.purple[50]?.withAlpha(3),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: BorderSide.none,
-      ),
-    );
+    return InputDecoration(labelText: label, prefixIcon: Icon(icon));
   }
 
   void _handleRegister() {
@@ -303,6 +298,10 @@ class _RegisterViewState extends State<RegisterView> {
         markaz: _selectedMarkaz,
       ),
     );
+    _selectedMarkaz = null;
+    _selectedRole = null;
+    passwordController.clear();
+    itsNumberController.clear();
   }
 
   void _showSnackBar(String message) {

@@ -9,6 +9,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AuthRepository {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  UserModel? _cachedUser;
+  UserModel? get cachedUser => _cachedUser;
+
   Future<UserModel?> login({
     required int itsNumber,
     required String password,
@@ -22,6 +25,7 @@ class AuthRepository {
       if (doc.exists) {
         UserModel user = UserModel.fromMap(doc.data() as Map<String, dynamic>);
         if (user.passwordHash == passwordHash) {
+          _cachedUser = user;
           return user;
         } else {
           devtools.log(
@@ -50,13 +54,19 @@ class AuthRepository {
       DocumentSnapshot doc = await docRef.get();
       if (doc.exists) {
         devtools.log("User with ITS number ${user.itsNumber} already exists");
-        throw Exception(UserAlreadyInUseException);
+        throw UserAlreadyInUseException;
       } else {
         await docRef.set(user.toMap());
       }
-    } catch (e) {
+    } on Exception catch (e) {
       devtools.log("Error during registration: $e");
-      throw Exception(UnknownAuthException);
+      if (e is UserAlreadyInUseException) {
+        devtools.log("Error during registration: $e 3");
+        rethrow;
+      } else {
+        devtools.log("Error during registration: $e 2");
+        throw UnknownAuthException;
+      }
     }
   }
 
@@ -64,7 +74,18 @@ class AuthRepository {
     return;
   }
 
-  Future<UserModel?> getCurrentUser() async {
-    return null;
+  Future<UserModel?> getCurrentUser(String? itsNumber) async {
+    if (itsNumber == null || itsNumber == "0") {
+      return _cachedUser;
+    }
+    DocumentSnapshot doc = await _db
+        .collection(Vars.userCollection_Var)
+        .doc(itsNumber.toString())
+        .get();
+    if (doc.exists) {
+      return UserModel.fromMap(doc.data() as Map<String, dynamic>);
+    } else {
+      return null;
+    }
   }
 }

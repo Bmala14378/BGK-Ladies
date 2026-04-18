@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class EventBloc extends Bloc<EventBlocEvent, EventBlocState> {
   final EventService _service;
+  // ignore: unused_field
   String? _selectedEventId;
 
   EventBloc(this._service) : super(const EventStateInitial()) {
@@ -29,40 +30,42 @@ class EventBloc extends Bloc<EventBlocEvent, EventBlocState> {
       _selectedEventId = event.eventId;
     });
 
-    on<EventBlocEventUpdateList>((event, emit) {
-      final activeEvents = event.allEvents
-          .where((eventModel) => eventModel.isactive)
-          .toList();
-
-      // Check the edge case: Is our selected event still active?
-      if (_selectedEventId != null) {
-        bool stillActive = activeEvents.any(
-          (eventModel) => eventModel.eventId == _selectedEventId,
-        );
-        if (!stillActive) {
-          emit(
-            const EventStateCurrentEventDisabled(
-              "This event has been closed by an admin.",
-            ),
-          );
-          return;
-        }
+    on<EventBlocEventCreate>((event, emit) async {
+      try {
+        await _service.createEvent(eventName: event.eventName);
+      } catch (e) {
+        emit(EventBlocStateError(errorMessage: e.toString(), isLoading: false));
       }
+    });
 
-      emit(
-        EventStateLoaded(
-          allEvents: event.allEvents,
-          activeEvents: activeEvents,
-          isLoading: false,
-        ),
-      );
+    on<EventBlocEventDelete>((event, emit) async {
+      try {
+        await _service.deleteEvent(eventId: event.eventId);
+      } catch (e) {
+        emit(EventBlocStateError(errorMessage: e.toString(), isLoading: false));
+      }
+    });
+
+    on<EventBlocEventStatusChange>((event, emit) async {
+      try {
+        await EventService().toggleEventActiveStatus(
+          eventId: event.eventId,
+          isActive: event.isactive,
+        );
+      } catch (e) {
+        emit(EventBlocStateError(errorMessage: e.toString(), isLoading: false));
+      }
     });
 
     on<EventBlocEventUpdateTitle>((event, emit) async {
-      await _service.updateEvent(
-        eventId: event.eventId,
-        eventName: event.newName,
-      );
+      try {
+        await _service.updateEvent(
+          eventId: event.eventId,
+          eventName: event.newName,
+        );
+      } catch (e) {
+        emit(EventBlocStateError(errorMessage: e.toString(), isLoading: false));
+      }
     });
 
     on<EventBlocEventReset>((event, emit) {

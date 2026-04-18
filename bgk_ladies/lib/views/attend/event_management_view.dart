@@ -2,7 +2,6 @@ import 'package:bgk_ladies/bloc/event/event_bloc_events.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_func.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_state.dart';
 import 'package:bgk_ladies/models/event_model.dart';
-import 'package:bgk_ladies/services/event/event_service.dart';
 import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,110 +28,122 @@ class _EventManagementViewState extends State<EventManagementView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text(
-          "Manage Events",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.purple[800],
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateDialog(context),
-        backgroundColor: Colors.purple[800],
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text("New Event", style: TextStyle(color: Colors.white)),
-      ),
-      body: Column(
-        children: [
-          _buildSearchAndFilterSection(),
-          Expanded(
-            child: BlocBuilder<EventBloc, EventBlocState>(
-              builder: (context, state) {
-                if (state.isLoading) {
-                  return Center(child: buildLoadingDialog(context));
-                }
-                if (state is EventStateLoaded) {
-                  // Apply Search and Filter logic
-                  final filteredEvents = state.allEvents.where((event) {
-                    final matchesSearch = event.eventName
-                        .toLowerCase()
-                        .contains(_searchQuery.toLowerCase());
-                    final matchesFilter =
-                        _selectedFilter == EventFilter.all ||
-                        (_selectedFilter == EventFilter.active &&
-                            event.isactive) ||
-                        (_selectedFilter == EventFilter.archived &&
-                            !event.isactive);
-                    return matchesSearch && matchesFilter;
-                  }).toList();
-
-                  if (filteredEvents.isEmpty) {
-                    return _buildEmptyState();
-                  }
-
-                  return Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          top: 16,
-                          left: 16,
-                          right: 16,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withAlpha(100),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                size: 20,
-                                color: Colors.blue[700],
-                              ),
-                              const SizedBox(width: 10),
-                              const Expanded(
-                                child: Text(
-                                  "Swipe left to delete an event and swipe right to edit an event",
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.only(
-                            bottom: 80,
-                          ), // Space for FAB
-                          itemCount: filteredEvents.length,
-                          itemBuilder: (context, index) {
-                            return _buildDismissibleTile(
-                              context,
-                              filteredEvents[index],
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  );
-                }
-                return const Center(child: Text("Unable to load events"));
-              },
+    return BlocConsumer<EventBloc, EventBlocState>(
+      listener: (context, state) {
+        if (state is EventBlocStateError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Event operation failed. Please try again."),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text("Manage Events"),
+            centerTitle: true,
+            elevation: 0,
+            surfaceTintColor: Colors.transparent,
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showCreateDialog(context),
+            backgroundColor: Colors.purple[800],
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text(
+              "New Event",
+              style: TextStyle(color: Colors.white),
             ),
           ),
-        ],
-      ),
+          body: Column(
+            children: [
+              _buildSearchAndFilterSection(),
+              Expanded(
+                child: BlocBuilder<EventBloc, EventBlocState>(
+                  builder: (context, state) {
+                    if (state.isLoading) {
+                      return Center(child: buildLoadingDialog(context));
+                    }
+                    if (state is EventStateLoaded) {
+                      // Apply Search and Filter logic
+                      final filteredEvents = state.allEvents.where((event) {
+                        final matchesSearch = event.eventName
+                            .toLowerCase()
+                            .contains(_searchQuery.toLowerCase());
+                        final matchesFilter =
+                            _selectedFilter == EventFilter.all ||
+                            (_selectedFilter == EventFilter.active &&
+                                event.isactive) ||
+                            (_selectedFilter == EventFilter.archived &&
+                                !event.isactive);
+                        return matchesSearch && matchesFilter;
+                      }).toList();
+
+                      if (filteredEvents.isEmpty) {
+                        return _buildEmptyState();
+                      }
+
+                      return Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              top: 16,
+                              left: 16,
+                              right: 16,
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withAlpha(100),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    size: 20,
+                                    color: Colors.blue[700],
+                                  ),
+                                  const SizedBox(width: 10),
+                                  const Expanded(
+                                    child: Text(
+                                      "Swipe left to delete an event and swipe right to edit an event",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: ListView.builder(
+                              padding: const EdgeInsets.only(
+                                bottom: 80,
+                              ), // Space for FAB
+                              itemCount: filteredEvents.length,
+                              itemBuilder: (context, index) {
+                                return _buildDismissibleTile(
+                                  context,
+                                  filteredEvents[index],
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return const Center(child: Text("Unable to load events"));
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -221,7 +232,9 @@ class _EventManagementViewState extends State<EventManagementView> {
       },
       onDismissed: (direction) {
         if (direction == DismissDirection.endToStart) {
-          EventService().deleteEvent(eventId: event.eventId);
+          context.read<EventBloc>().add(
+            EventBlocEventDelete(eventId: event.eventId),
+          );
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text("${event.eventName} deleted")));
@@ -282,9 +295,8 @@ class _EventManagementViewState extends State<EventManagementView> {
           value: event.isactive,
           activeThumbColor: Colors.purple,
           onChanged: (val) {
-            EventService().toggleEventActiveStatus(
-              eventId: event.eventId,
-              isActive: val,
+            context.read<EventBloc>().add(
+              EventBlocEventStatusChange(eventId: event.eventId, isactive: val),
             );
           },
         ),
@@ -359,7 +371,7 @@ class _EventManagementViewState extends State<EventManagementView> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+            child: const Text("Delete"),
           ),
         ],
       ),
@@ -387,7 +399,9 @@ class _EventManagementViewState extends State<EventManagementView> {
           ElevatedButton(
             onPressed: () {
               if (controller.text.isNotEmpty) {
-                EventService().createEvent(eventName: controller.text);
+                context.read<EventBloc>().add(
+                  EventBlocEventCreate(eventName: controller.text),
+                );
                 Navigator.pop(context);
               }
             },

@@ -1,3 +1,4 @@
+import 'package:bgk_ladies/themes.dart';
 import 'package:flutter/material.dart';
 
 class QuickActionButton extends StatelessWidget {
@@ -16,9 +17,11 @@ class QuickActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEFE7F9),
+        color: AppTheme.primaryLight,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.purple.withAlpha(10)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withAlpha(10),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.purple.withAlpha(30),
@@ -35,7 +38,7 @@ class QuickActionButton extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.purple, size: 35),
+              Icon(icon, color: Theme.of(context).colorScheme.secondary, size: 35),
               const SizedBox(height: 12),
               Text(
                 label,

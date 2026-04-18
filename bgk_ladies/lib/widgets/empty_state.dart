@@ -1,3 +1,4 @@
+import 'package:bgk_ladies/themes.dart';
 import 'package:flutter/material.dart';
 
 Widget buildEmptyState() {
@@ -5,7 +6,7 @@ Widget buildEmptyState() {
     width: double.infinity,
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
-      color: Colors.grey[200],
+      color: AppTheme.backgroundGrey,
       borderRadius: BorderRadius.circular(12),
     ),
     child: const Column(
