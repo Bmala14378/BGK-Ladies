@@ -7,6 +7,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AttendRepository {
   final _db = FirebaseFirestore.instance;
 
+  Stream<List<AttendanceModel>> getFullAttendanceStream({
+    required String eventId,
+  }) {
+    try {
+      return _db
+          .collection(Vars.eventCollection_Var)
+          .doc(eventId)
+          .collection(Vars.attendanceCollection_Var)
+          .snapshots()
+          .map((snapshot) {
+            return snapshot.docs
+                .map((doc) => AttendanceModel.fromMap(doc.data()))
+                .toList();
+          });
+    } catch (e) {
+      throw Exception("Failed to fetch attendance stream: $e");
+    }
+  }
+
   Stream<List<AttendanceModel>> getAttendanceStream({
     required String eventId,
     required MarkazEnum markaz,

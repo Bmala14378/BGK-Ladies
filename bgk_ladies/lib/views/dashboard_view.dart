@@ -91,6 +91,25 @@ class DashboardView extends StatelessWidget {
                   },
                   child: const Text("Retry"),
                 ),
+
+                TextButton(
+                  onPressed: () {
+                    context.read<AttendBloc>().add(
+                      const AttendBlocEventReset(),
+                    );
+                    context.read<AppointBloc>().add(
+                      const AppointBlocEventReset(),
+                    );
+                    context.read<MemberBloc>().add(
+                      const MemberBlocEventReset(),
+                    );
+                    context.read<EventBloc>().add(const EventBlocEventReset());
+                    context.read<AuthBlocFunc>().add(
+                      const AuthBlocEventLogOut(),
+                    );
+                  },
+                  child: Text("Back"),
+                ),
               ],
             ),
           ),

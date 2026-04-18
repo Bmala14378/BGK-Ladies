@@ -6,6 +6,10 @@ import 'package:bgk_ladies/repo/attend/attend_repo.dart';
 class AttendService {
   final _repo = AttendRepository();
 
+  Stream<List<AttendanceModel>> getEventAttendance({required String eventId}) {
+    return _repo.getFullAttendanceStream(eventId: eventId);
+  }
+
   Stream<List<AttendanceModel>> getMarkazAttendance(
     String eventId,
     MarkazEnum markaz,

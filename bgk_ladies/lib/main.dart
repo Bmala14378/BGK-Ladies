@@ -30,21 +30,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 //Optional TODOs:
 //TODO: Add user profile page with edit functionality with password change option
-//TODO: Add loading indicators for all async operations in the UI
-//TODO: Add Sorting ANd filter For Appoint And Attend
+//TODO: Add loading indicators for all async operations in the UI (Recheck)
+//TODO: Add Sorting & filter For Appoint And Attend
 
-//Pre-Production Checklist:
-// TODO: Firebase Security Rules: This is the most common mistake. Ensure your Firestore rules aren't set to "allow read, write: if true;". They must be locked down so users can only see their own group's data.
+// Pre-Production Checklist:
 
 // TODO: Rate Limiting
 
 // TODO: Error Logging: Integrate Firebase Crashlytics and Sentry. You need to know if the app crashes on a client's device before they call you to complain.
 
-// TODO: Production Keys: Swap all your test API keys (Google Maps, Gemini, etc.) for production keys with proper usage restrictions (e.g., restricted to your app's Bundle ID).
+//  Firebase Security Rules: This is the most common mistake. Ensure your Firestore rules aren't set to "allow read, write: if true;". They must be locked down so users can only see their own group's data.
 
-// TODO: Assets Optimization: Ensure all images/icons are compressed. Huge assets will make the app feel sluggish on older Android devices.
+//  Production Keys: Swap all your test API keys (Google Maps, Gemini, etc.) for production keys with proper usage restrictions (e.g., restricted to your app's Bundle ID).
 
-// TODO: Legal/Privacy: Since you are handling "ITS numbers" and personal attendance, you must have a basic Privacy Policy linked inside the app and on the App Store page.
+//  Assets Optimization: Ensure all images/icons are compressed. Huge assets will make the app feel sluggish on older Android devices.
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

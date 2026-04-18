@@ -3,8 +3,10 @@
 import 'package:bgk_ladies/bloc/attend/attend_bloc_func.dart';
 import 'package:bgk_ladies/bloc/attend/attend_bloc_states.dart';
 import 'package:bgk_ladies/enums/status_enum.dart';
+import 'package:bgk_ladies/models/attendance_model.dart';
 import 'package:bgk_ladies/models/event_model.dart';
 import 'package:bgk_ladies/models/member_model.dart';
+import 'package:bgk_ladies/services/attend/attend_service.dart';
 import 'package:bgk_ladies/themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -37,188 +39,101 @@ class EventCard extends StatelessWidget {
           event.eventName,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        // subtitle: const Text("Tap to view details"),
-        // trailing: const Icon(Icons.chevron_right),
+        subtitle: const Text("Tap to view details"),
+        trailing: const Icon(Icons.chevron_right),
         onTap: () {
-          //TODO: Add active event bottom sheet in the DashboardView for quick stats and actions related to the active event
-          //showEventActions(context, event, myGroupMembers);
+          _showEventSummarySheet(context, event, myGroupMembers);
         },
       ),
     );
   }
 }
 
-// void _showEventActions(
-//   BuildContext context,
-//   EventModel event,
-//   List<MemberModel> groupMembers,
-// ) {
-//   // Create a Set of ITS numbers for the current user's group for O(1) lookup
-//   final myGroupItsNumbers = groupMembers.map((m) => m.itsNumber).toSet();
+void _showEventSummarySheet(
+  BuildContext context,
+  EventModel event,
+  List<MemberModel> myMembers,
+) {
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return StreamBuilder<List<AttendanceModel>>(
+        // Replace with your service call to get attendance for this event
+        stream: AttendService().getEventAttendance(eventId: event.eventId),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const SizedBox(
+              height: 200,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
 
-//   showModalBottomSheet(
-//     context: context,
-//     isScrollControlled: true,
-//     shape: const RoundedRectangleBorder(
-//       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-//     ),
-//     builder: (context) {
-//       return Padding(
-//         padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-//         child: Column(
-//           mainAxisSize: MainAxisSize.min,
-//           children: [
-//             // Pull Handle
-//             Container(
-//               width: 40,
-//               height: 4,
-//               margin: const EdgeInsets.only(bottom: 15),
-//               decoration: BoxDecoration(
-//                 color: Colors.grey[300],
-//                 borderRadius: BorderRadius.circular(10),
-//               ),
-//             ),
+          final attendance = snapshot.data!;
 
-//             Text(
-//               event.eventName,
-//               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//             ),
-//             const SizedBox(height: 20),
+          // FILTER: Only look at attendance records for "My Members"
+          final myAttendance = attendance
+              .where((a) => myMembers.any((m) => m.itsNumber == a.itsNumber))
+              .toList();
 
-//             // --- Stats Section ---
-//             BlocBuilder<AttendBloc, AttendBlocState>(
-//               builder: (context, state) {
-//                 if (state is AttendBlocStateLoaded) {
-//                   // Filter: Only show attendance records where the itsNumber
-//                   // exists in myGroupItsNumbers AND matches this specific event
-//                   final myGroupAttendance = state.attendanceList
-//                       .where(
-//                         (record) =>
-//                             myGroupItsNumbers.contains(record.itsNumber),
-//                       )
-//                       .toList();
+          final total = myAttendance.length;
+          final present = myAttendance
+              .where((a) => a.status == StatusEnum.present)
+              .length;
+          final late = myAttendance
+              .where((a) => a.status == StatusEnum.late)
+              .length;
+          final absent = myAttendance
+              .where((a) => a.status == StatusEnum.absent)
+              .length;
 
-//                   if (myGroupAttendance.isEmpty) {
-//                     return _buildEmptyGroupState();
-//                   }
+          return Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  event.eventName,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Divider(),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildStatItem("Appointed", total.toString(), Colors.blue),
+                    _buildStatItem("Present", present.toString(), Colors.green),
+                    _buildStatItem("Late", late.toString(), Colors.orange),
+                    _buildStatItem("Absent", absent.toString(), Colors.red),
+                  ],
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 
-//                   // Calculate Statuses
-//                   final present = myGroupAttendance
-//                       .where((m) => m.status == StatusEnum.present)
-//                       .length;
-//                   final late = myGroupAttendance
-//                       .where((m) => m.status == StatusEnum.late)
-//                       .length;
-//                   final absent = myGroupAttendance
-//                       .where((m) => m.status == StatusEnum.absent)
-//                       .length;
-//                   final total = myGroupAttendance.length;
-
-//                   return Container(
-//                     padding: const EdgeInsets.all(16),
-//                     decoration: BoxDecoration(
-//                       color: AppTheme.primaryLight.withAlpha(50),
-//                       borderRadius: BorderRadius.circular(15),
-//                     ),
-//                     child: Row(
-//                       mainAxisAlignment: MainAxisAlignment.spaceAround,
-//                       children: [
-//                         _buildStatsItem(
-//                           "Appointed",
-//                           total.toString(),
-//                           AppTheme.primaryPurple,
-//                         ),
-//                         _buildStatsItem(
-//                           "Present",
-//                           present.toString(),
-//                           AppTheme.statusPresent,
-//                         ),
-//                         _buildStatsItem(
-//                           "Late",
-//                           late.toString(),
-//                           AppTheme.statusLate,
-//                         ),
-//                         _buildStatsItem(
-//                           "Absent",
-//                           absent.toString(),
-//                           AppTheme.statusAbsent,
-//                         ),
-//                       ],
-//                     ),
-//                   );
-//                 }
-//                 return const Center(child: CircularProgressIndicator());
-//               },
-//             ),
-
-//             const SizedBox(height: 20),
-//             const Divider(),
-
-//             // --- Navigation Actions ---
-//             ListTile(
-//               leading: const Icon(Icons.check_circle_outline),
-//               title: const Text("Mark Attendance"),
-//               onTap: () {
-//                 Navigator.pop(context);
-//                 Navigator.pushNamed(context, '/attend', arguments: event);
-//               },
-//             ),
-//             ListTile(
-//               leading: const Icon(Icons.person_add_alt_1_outlined),
-//               title: const Text("Appoint Members"),
-//               onTap: () {
-//                 Navigator.pop(context);
-//                 Navigator.pushNamed(context, '/appoint', arguments: event);
-//               },
-//             ),
-//           ],
-//         ),
-//       );
-//     },
-//   );
-// }
-
-// Widget _buildEmptyGroupState() {
-//   return Padding(
-//     padding: const EdgeInsets.symmetric(vertical: 30),
-//     child: Column(
-//       children: [
-//         Icon(Icons.group_off_outlined, color: Colors.grey[400], size: 50),
-//         const SizedBox(height: 12),
-//         const Text(
-//           "No members from your group\nare appointed to this event.",
-//           textAlign: TextAlign.center,
-//           style: TextStyle(
-//             color: Colors.grey,
-//             fontSize: 14,
-//             fontWeight: FontWeight.w500,
-//           ),
-//         ),
-//       ],
-//     ),
-//   );
-// }
-
-// Widget _buildStatsItem(String label, String value, Color color) {
-//   return Column(
-//     mainAxisSize: MainAxisSize.min,
-//     children: [
-//       Text(
-//         value,
-//         style: TextStyle(
-//           fontSize: 20,
-//           fontWeight: FontWeight.bold,
-//           color: color,
-//         ),
-//       ),
-//       Text(
-//         label,
-//         style: TextStyle(
-//           fontSize: 10,
-//           fontWeight: FontWeight.w600,
-//           color: Colors.grey[700],
-//         ),
-//       ),
-//     ],
-//   );
-// }
+Widget _buildStatItem(String label, String count, Color color) {
+  return Column(
+    children: [
+      Text(
+        count,
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
+      ),
+      Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+    ],
+  );
+}
