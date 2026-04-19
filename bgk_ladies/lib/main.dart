@@ -1,5 +1,6 @@
 import 'dart:developer' as devtools;
 
+//Bloc
 import 'package:bgk_ladies/bloc/appoint/appoint_bloc_event.dart';
 import 'package:bgk_ladies/bloc/appoint/appoint_bloc_func.dart';
 import 'package:bgk_ladies/bloc/attend/attend_bloc_events.dart';
@@ -11,33 +12,44 @@ import 'package:bgk_ladies/bloc/event/event_bloc_events.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_func.dart';
 import 'package:bgk_ladies/bloc/member/member_bloc_events.dart';
 import 'package:bgk_ladies/bloc/member/member_bloc_func.dart';
-import 'package:bgk_ladies/firebase_options.dart';
+import 'package:bgk_ladies/bloc/network/network_bloc.dart';
+
+//Services & Repos
 import 'package:bgk_ladies/repo/auth/auth_exception.dart';
 import 'package:bgk_ladies/repo/auth/auth_repo.dart';
 import 'package:bgk_ladies/services/appoint/appoint_service.dart';
 import 'package:bgk_ladies/services/attend/attend_service.dart';
 import 'package:bgk_ladies/services/event/event_service.dart';
 import 'package:bgk_ladies/services/member/member_service.dart';
+
+//Utilities
 import 'package:bgk_ladies/themes.dart';
 import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
+import 'package:bgk_ladies/utilites/dialog/network_dialog.dart';
+import 'package:bgk_ladies/firebase_options.dart';
+
+//Views
 import 'package:bgk_ladies/views/attend/event_management_view.dart';
 import 'package:bgk_ladies/views/auth/login_view.dart';
 import 'package:bgk_ladies/views/auth/register_view.dart';
 import 'package:bgk_ladies/views/dashboard_view.dart';
+
+//Packages
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:upgrader/upgrader.dart';
 
 //Optional TODOs:
-//TODO: Add user profile page with edit functionality with password change option
 //TODO: Add loading indicators for all async operations in the UI (Recheck)
-//TODO: Add Sorting & filter For Appoint And Attend
+
+//TODO: Add Sorting & filter For Appoint And Attend View
 
 // Pre-Production Checklist:
 
-// TODO: Rate Limiting
+// TODO: Rate Limiting(Recheck)
 
-// TODO: Error Logging: Integrate Firebase Crashlytics and Sentry. You need to know if the app crashes on a client's device before they call you to complain.
+// TODO: Error Logging: Integrate Firebase Crashlytics and Sentry.
 
 //  Firebase Security Rules: This is the most common mistake. Ensure your Firestore rules aren't set to "allow read, write: if true;". They must be locked down so users can only see their own group's data.
 
@@ -51,6 +63,7 @@ void main() async {
   runApp(
     MultiBlocProvider(
       providers: [
+        BlocProvider(create: (context) => NetworkBloc()),
         BlocProvider(
           create: (context) =>
               AuthBlocFunc(AuthRepository(), MemberService())
@@ -72,21 +85,53 @@ void main() async {
                 ..add(const AttendBlocEventFetchActiveEvents()),
         ),
       ],
-      child: MaterialApp(
-        theme: AppTheme.lightTheme,
-        themeMode: ThemeMode.light,
-        debugShowCheckedModeBanner: false,
-        title: "BGK Ladies",
-        routes: {
-          "/login": (context) => LoginView(),
-          "/register": (context) => RegisterView(),
-          "/dash": (context) => DashboardView(),
-          "/eventmgmt": (context) => EventManagementView(),
-        },
-        home: MainPg(),
-      ),
+      child: const MyApp(),
     ),
   );
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'BGK Ladies',
+      theme: AppTheme.lightTheme,
+      themeMode: ThemeMode.light,
+      debugShowCheckedModeBanner: false,
+      routes: {
+        "/login": (context) => LoginView(),
+        "/register": (context) => RegisterView(),
+        "/dash": (context) => DashboardView(),
+        "/eventmgmt": (context) => EventManagementView(),
+      },
+      // The Builder here allows us to get a context under the BlocProviders
+      home: UpgradeAlert(
+        showIgnore: false,
+        showLater: false,
+        upgrader: Upgrader(
+          storeController: UpgraderStoreController(
+            onAndroid: () => UpgraderPlayStore(),
+            oniOS: () => UpgraderAppStore(),
+          ),
+        ),
+        child: BlocListener<NetworkBloc, NetworkState>(
+          listener: (context, state) {
+            if (state.status == NetworkStatus.disconnected) {
+              showNoInternetDialog(context);
+            } else {
+              // Automatically close the dialog when internet returns
+              if (Navigator.canPop(context)) {
+                Navigator.of(context, rootNavigator: true).pop();
+              }
+            }
+          },
+          child: const MainPg(),
+        ),
+      ),
+    );
+  }
 }
 
 class MainPg extends StatelessWidget {
@@ -95,9 +140,11 @@ class MainPg extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthBlocFunc, AuthBlocState>(
+      listenWhen: (previous, current) =>
+          previous.isLoading != current.isLoading,
       listener: (context, state) {
         if (state.isLoading) {
-          buildLoadingDialog(context);
+          Center(child: buildLoadingDialog(context));
         }
 
         if (state is AuthBlocStateLoggedOut) {

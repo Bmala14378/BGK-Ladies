@@ -119,6 +119,7 @@ class _EventManagementViewState extends State<EventManagementView> {
                               ),
                             ),
                           ),
+                          SizedBox(height: 4),
                           Expanded(
                             child: ListView.builder(
                               padding: const EdgeInsets.only(

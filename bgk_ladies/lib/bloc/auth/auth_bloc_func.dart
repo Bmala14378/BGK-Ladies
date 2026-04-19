@@ -113,5 +113,46 @@ class AuthBlocFunc extends Bloc<AuthBlocEvent, AuthBlocState> {
     on<AuthBlocEventNavigateToDash>((event, emit) {
       emit(AuthBlocStatesNavigatingToDash(isLoading: false, user: event.user));
     });
+
+    on<AuthBlocEventChangePassword>((event, emit) async {
+      if (_currentUser == null) return;
+
+      try {
+        await repo.changePassword(
+          oldPassword: event.oldPassword,
+          newPassword: event.newPassword,
+        );
+
+        // 1. Emit the actual success state so the dialog knows to close
+        emit(const AuthBlocStatePasswordChangeSuccess(isLoading: false));
+
+        // 2. Safely return to the LoggedIn state so the rest of the app works
+        emit(
+          AuthBlocStateLoggedIn(
+            isLoading: false,
+            itsNumber: _currentUser!.itsNumber,
+            user: _currentUser!,
+          ),
+        );
+      } catch (e) {
+        // 1. Emit the error so the UI can show a red snackbar
+        emit(
+          AuthBlocStateError(
+            isLoading: false,
+            exception: e.toString().replaceAll("Exception: ", ""),
+            currentUser: _currentUser,
+          ),
+        );
+
+        // 2. Safely return to LoggedIn state
+        emit(
+          AuthBlocStateLoggedIn(
+            isLoading: false,
+            itsNumber: _currentUser!.itsNumber,
+            user: _currentUser!,
+          ),
+        );
+      }
+    });
   }
 }

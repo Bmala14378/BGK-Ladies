@@ -47,6 +47,16 @@ class AuthBlocEventNavigateToRegister extends AuthBlocEvent {
 }
 
 class AuthBlocEventNavigateToDash extends AuthBlocEvent {
-   final UserModel user;
+  final UserModel user;
   const AuthBlocEventNavigateToDash({required this.user});
+}
+
+class AuthBlocEventChangePassword extends AuthBlocEvent {
+  final String oldPassword;
+  final String newPassword;
+
+  const AuthBlocEventChangePassword({
+    required this.oldPassword,
+    required this.newPassword,
+  });
 }

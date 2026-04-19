@@ -81,7 +81,8 @@ class AttendRepository {
         final docRef = collectionRef.doc(itsNumber);
         batch.set(docRef, {
           Vars.status_Var: status.name,
-          'dateTime': DateTime.now(), // Record the time of the batch save
+          Vars.dateTime_Var:
+              FieldValue.serverTimestamp(), // Record the time of the batch save
         }, SetOptions(merge: true));
       });
 

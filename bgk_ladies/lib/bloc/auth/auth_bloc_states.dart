@@ -71,3 +71,7 @@ class AuthBlocStateError extends AuthBlocState {
     required this.currentUser,
   });
 }
+
+class AuthBlocStatePasswordChangeSuccess extends AuthBlocState {
+  const AuthBlocStatePasswordChangeSuccess({required super.isLoading});
+}
