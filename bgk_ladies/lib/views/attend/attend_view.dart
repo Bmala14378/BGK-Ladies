@@ -257,93 +257,100 @@ class _AttendanceViewState extends State<AttendanceView> {
         pinned: true,
         delegate: _StickyHeaderDelegate(
           height: 245.0,
-          child: Expanded(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: SizedBox(
-                    height: 50,
-                    child: TextField(
-                      decoration: InputDecoration(
-                        suffixIcon: IconButton(
-                          tooltip: "Sort By Group Leader",
-                          onPressed: () {
-                            if (_sortByGroupLeader) {
-                              setState(() {
-                                _sortByGroupLeader = false;
-                              });
-                            } else if (!_sortByGroupLeader) {
-                              setState(() {
-                                _sortByGroupLeader = true;
-                              });
-                            }
-                          },
-                          icon: _sortByGroupLeader
-                              ? Icon(Icons.filter_alt_rounded)
-                              : Icon(Icons.filter_alt_off_rounded),
-                        ),
-                        hintText: "Search by name or ITS...",
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+          child: Column(
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SizedBox(
+                        height: 50,
+                        child: TextField(
+                          decoration: InputDecoration(
+                            suffixIcon: IconButton(
+                              tooltip: "Sort By Group Leader",
+                              onPressed: () {
+                                if (_sortByGroupLeader) {
+                                  setState(() {
+                                    _sortByGroupLeader = false;
+                                  });
+                                } else if (!_sortByGroupLeader) {
+                                  setState(() {
+                                    _sortByGroupLeader = true;
+                                  });
+                                }
+                              },
+                              icon: _sortByGroupLeader
+                                  ? Icon(Icons.filter_alt_rounded)
+                                  : Icon(Icons.filter_alt_off_rounded),
+                            ),
+                            hintText: "Search by name or ITS...",
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onChanged: (value) =>
+                              setState(() => _searchQuery = value),
                         ),
                       ),
-                      onChanged: (value) =>
-                          setState(() => _searchQuery = value),
                     ),
-                  ),
-                ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    children:
-                        [
-                          {'label': 'All', 'value': null},
-                          {'label': 'Unmarked', 'value': StatusEnum.appointed},
-                          {'label': 'Present', 'value': StatusEnum.present},
-                          {'label': 'Late', 'value': StatusEnum.late},
-                          {'label': 'Absent', 'value': StatusEnum.absent},
-                        ].map((filter) {
-                          final isSelected =
-                              _selectedStatusFilter == filter['value'];
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: ChoiceChip(
-                              label: Text(filter['label'] as String),
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                setState(
-                                  () => _selectedStatusFilter =
-                                      filter['value'] as StatusEnum?,
-                                );
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        children:
+                            [
+                              {'label': 'All', 'value': null},
+                              {
+                                'label': 'Unmarked',
+                                'value': StatusEnum.appointed,
                               },
-                            ),
-                          );
-                        }).toList(),
-                  ),
+                              {'label': 'Present', 'value': StatusEnum.present},
+                              {'label': 'Late', 'value': StatusEnum.late},
+                              {'label': 'Absent', 'value': StatusEnum.absent},
+                            ].map((filter) {
+                              final isSelected =
+                                  _selectedStatusFilter == filter['value'];
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: ChoiceChip(
+                                  label: Text(filter['label'] as String),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(
+                                      () => _selectedStatusFilter =
+                                          filter['value'] as StatusEnum?,
+                                    );
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildStatItem("Total", total, Colors.blueGrey),
+                          _buildStatItem("Present", present, Colors.green),
+                          _buildStatItem("Late", late, Colors.yellow[800]!),
+                          _buildStatItem("Absent", absent, Colors.red),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    _buildListHeader(),
+                    const Divider(height: 1),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildStatItem("Total", total, Colors.blueGrey),
-                      _buildStatItem("Present", present, Colors.green),
-                      _buildStatItem("Late", late, Colors.yellow[800]!),
-                      _buildStatItem("Absent", absent, Colors.red),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                _buildListHeader(),
-                const Divider(height: 1),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
