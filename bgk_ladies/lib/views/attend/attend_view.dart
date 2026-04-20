@@ -29,6 +29,8 @@ class AttendanceView extends StatefulWidget {
 class _AttendanceViewState extends State<AttendanceView> {
   bool _sortByGroupLeader = false;
   String _searchQuery = "";
+
+  StatusEnum? _selectedStatusFilter;
   // 1. ADD: Local map for batch updates
   final Map<String, StatusEnum> _pendingUpdates = {};
 
@@ -61,17 +63,19 @@ class _AttendanceViewState extends State<AttendanceView> {
           floatingActionButton: _pendingUpdates.isNotEmpty
               ? FloatingActionButton.extended(
                   backgroundColor: Colors.purple[800],
-                  onPressed: () {
-                    final state = context.read<AttendBloc>().state;
-                    if (state is AttendBlocStateLoaded) {
-                      context.read<AttendBloc>().add(
-                        AttendBlocEventSubmitBatch(
-                          eventId: state.eventId,
-                          attendanceUpdates: _pendingUpdates,
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: state is AttendBlocStateSubmitting
+                      ? null
+                      : () {
+                          final state = context.read<AttendBloc>().state;
+                          if (state is AttendBlocStateLoaded) {
+                            context.read<AttendBloc>().add(
+                              AttendBlocEventSubmitBatch(
+                                eventId: state.eventId,
+                                attendanceUpdates: _pendingUpdates,
+                              ),
+                            );
+                          }
+                        },
                   icon: const Icon(Icons.cloud_upload, color: Colors.white),
                   label: Text(
                     "Save ${_pendingUpdates.length} Changes",
@@ -221,10 +225,17 @@ class _AttendanceViewState extends State<AttendanceView> {
   List<Widget> _buildLoadedContent(AttendBlocStateLoaded state) {
     final filteredList = state.attendanceList.where((member) {
       final query = _searchQuery.toLowerCase();
-      return member.name.toLowerCase().contains(query) ||
+      final matchesSearch =
+          member.name.toLowerCase().contains(query) ||
           member.itsNumber.contains(query);
-    }).toList();
 
+      final currentStatus = _getDisplayStatus(member);
+      final matchesStatus =
+          _selectedStatusFilter == null ||
+          currentStatus == _selectedStatusFilter;
+
+      return matchesSearch && matchesStatus;
+    }).toList();
     if (_sortByGroupLeader) {
       filteredList.sort((a, b) => a.glName.compareTo(b.glName));
     }
@@ -245,7 +256,7 @@ class _AttendanceViewState extends State<AttendanceView> {
       SliverPersistentHeader(
         pinned: true,
         delegate: _StickyHeaderDelegate(
-          height: 195.0,
+          height: 245.0,
           child: Expanded(
             child: Column(
               children: [
@@ -281,6 +292,36 @@ class _AttendanceViewState extends State<AttendanceView> {
                       onChanged: (value) =>
                           setState(() => _searchQuery = value),
                     ),
+                  ),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    children:
+                        [
+                          {'label': 'All', 'value': null},
+                          {'label': 'Unmarked', 'value': StatusEnum.appointed},
+                          {'label': 'Present', 'value': StatusEnum.present},
+                          {'label': 'Late', 'value': StatusEnum.late},
+                          {'label': 'Absent', 'value': StatusEnum.absent},
+                        ].map((filter) {
+                          final isSelected =
+                              _selectedStatusFilter == filter['value'];
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: ChoiceChip(
+                              label: Text(filter['label'] as String),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(
+                                  () => _selectedStatusFilter =
+                                      filter['value'] as StatusEnum?,
+                                );
+                              },
+                            ),
+                          );
+                        }).toList(),
                   ),
                 ),
                 Padding(

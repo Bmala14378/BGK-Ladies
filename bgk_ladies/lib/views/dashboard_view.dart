@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:developer' as devtools;
 
 import 'package:bgk_ladies/bloc/appoint/appoint_bloc_event.dart';
@@ -26,6 +28,7 @@ import 'package:bgk_ladies/widgets/quick_action_button.dart';
 import 'package:bgk_ladies/widgets/stat_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class DashboardView extends StatelessWidget {
   const DashboardView({super.key});
@@ -33,6 +36,7 @@ class DashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authState = context.read<AuthBlocFunc>().state;
+
     // ignore: unused_local_variable
     final currentIts = (authState is AuthBlocStateLoggedIn)
         ? authState.user.itsNumber
@@ -56,17 +60,23 @@ class DashboardView extends StatelessWidget {
         final myInfo = memberState.userProfile;
         final myMembers = memberState.members;
         final totalMembers = memberState.members.length;
+        String getSafeEventId(BuildContext context) {
+          final eventState = context.read<EventBloc>().state;
+
+          if (eventState is EventStateLoaded &&
+              eventState.activeEvents.isNotEmpty) {
+            return eventState.activeEvents.first.eventId;
+          }
+
+          return ""; // Return empty string if no events exist
+        }
+
         return DashboardViewWidget(
           currentUser: currentUser!,
           myInfo: myInfo!,
           myMembers: myMembers,
           totalMembers: totalMembers,
-          eventId: context.read<EventBloc>().state is EventStateLoaded
-              ? (context.read<EventBloc>().state as EventStateLoaded)
-                    .activeEvents
-                    .first
-                    .eventId
-              : "",
+          eventId: getSafeEventId(context),
         );
       } else if (memberState is MemberStateError &&
           memberState.errorMessage != "") {
@@ -148,6 +158,24 @@ class DashboardViewWidget extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Dashboard"),
         actions: [
+          IconButton(
+            onPressed: () async {
+              PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+              String version = packageInfo.version;
+              String buildNumber = packageInfo.buildNumber;
+
+              showAboutDialog(
+                context: context,
+                applicationName: 'BGK Ladies',
+                applicationVersion: '$version+$buildNumber',
+
+                applicationLegalese:
+                    '© 2026 BGK Kuwait. All rights reserved.\nDeveloped by Burhanuddin Mala',
+              );
+            },
+            icon: Icon(Icons.info_outline_rounded),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {

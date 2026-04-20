@@ -19,6 +19,14 @@ class EventStateLoaded extends EventBlocState {
     required this.allEvents,
     required super.isLoading,
   });
+
+  EventStateLoaded copyWith({bool? isLoading}) {
+    return EventStateLoaded(
+      activeEvents: activeEvents,
+      allEvents: allEvents,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
 }
 
 class EventStateCurrentEventDisabled extends EventBlocState {

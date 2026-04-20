@@ -31,38 +31,69 @@ class EventBloc extends Bloc<EventBlocEvent, EventBlocState> {
     });
 
     on<EventBlocEventCreate>((event, emit) async {
+      // 1. Lock the UI
+      if (state is EventStateLoaded) {
+        emit((state as EventStateLoaded).copyWith(isLoading: true));
+      }
+
       try {
         await _service.createEvent(eventName: event.eventName);
+
+        // 2. Unlock the UI (The stream might also trigger an unlock, which is fine)
+        if (state is EventStateLoaded) {
+          emit((state as EventStateLoaded).copyWith(isLoading: false));
+        }
       } catch (e) {
         emit(EventBlocStateError(errorMessage: e.toString(), isLoading: false));
       }
     });
 
     on<EventBlocEventDelete>((event, emit) async {
+      if (state is EventStateLoaded) {
+        emit((state as EventStateLoaded).copyWith(isLoading: true));
+      }
+
       try {
         await _service.deleteEvent(eventId: event.eventId);
+
+        if (state is EventStateLoaded) {
+          emit((state as EventStateLoaded).copyWith(isLoading: false));
+        }
       } catch (e) {
         emit(EventBlocStateError(errorMessage: e.toString(), isLoading: false));
       }
     });
 
     on<EventBlocEventStatusChange>((event, emit) async {
+      if (state is EventStateLoaded) {
+        emit((state as EventStateLoaded).copyWith(isLoading: true));
+      }
+
       try {
         await EventService().toggleEventActiveStatus(
           eventId: event.eventId,
           isActive: event.isactive,
         );
+        if (state is EventStateLoaded) {
+          emit((state as EventStateLoaded).copyWith(isLoading: false));
+        }
       } catch (e) {
         emit(EventBlocStateError(errorMessage: e.toString(), isLoading: false));
       }
     });
 
     on<EventBlocEventUpdateTitle>((event, emit) async {
+      if (state is EventStateLoaded) {
+        emit((state as EventStateLoaded).copyWith(isLoading: true));
+      }
       try {
         await _service.updateEvent(
           eventId: event.eventId,
           eventName: event.newName,
         );
+        if (state is EventStateLoaded) {
+          emit((state as EventStateLoaded).copyWith(isLoading: false));
+        }
       } catch (e) {
         emit(EventBlocStateError(errorMessage: e.toString(), isLoading: false));
       }

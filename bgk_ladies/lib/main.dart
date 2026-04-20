@@ -1,4 +1,5 @@
 import 'dart:developer' as devtools;
+import 'dart:ui';
 
 //Bloc
 import 'package:bgk_ladies/bloc/appoint/appoint_bloc_event.dart';
@@ -36,31 +37,44 @@ import 'package:bgk_ladies/views/dashboard_view.dart';
 
 //Packages
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:upgrader/upgrader.dart';
-
-//Optional TODOs:
-//TODO: Add loading indicators for all async operations in the UI (Recheck)
-
-//TODO: Add Sorting & filter For Appoint And Attend View
-
-// Pre-Production Checklist:
-
-// TODO: Rate Limiting(Recheck)
-
-// TODO: Error Logging: Integrate Firebase Crashlytics and Sentry.
-
-//  Firebase Security Rules: This is the most common mistake. Ensure your Firestore rules aren't set to "allow read, write: if true;". They must be locked down so users can only see their own group's data.
-
-//  Production Keys: Swap all your test API keys (Google Maps, Gemini, etc.) for production keys with proper usage restrictions (e.g., restricted to your app's Bundle ID).
-
-//  Assets Optimization: Ensure all images/icons are compressed. Huge assets will make the app feel sluggish on older Android devices.
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(
+
+  FlutterError.onError = (errorDetails) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = 'https://c2b22ea24e44e017805149d8a2c109dd@o4511251023790080.ingest.us.sentry.io/4511251023986688';
+      // Adds request headers and IP for users, for more info visit:
+      // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/
+      options.sendDefaultPii = true;
+      options.enableLogs = true;
+      // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
+      // We recommend adjusting this value in production.
+      options.tracesSampleRate = 1.0;
+      // The sampling rate for profiling is relative to tracesSampleRate
+      // Setting to 1.0 will profile 100% of sampled transactions:
+
+      // ignore: experimental_member_use
+      options.profilesSampleRate = 0.5;
+      // Configure Session Replay
+      options.replay.sessionSampleRate = 0.1;
+      options.replay.onErrorSampleRate = 1.0;
+    },
+    appRunner: () => runApp(SentryWidget(child: 
     MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => NetworkBloc()),
@@ -87,6 +101,7 @@ void main() async {
       ],
       child: const MyApp(),
     ),
+  )),
   );
 }
 

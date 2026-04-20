@@ -23,6 +23,8 @@ class _AppointViewState extends State<AppointView> {
   String? _lastLoadedEventId;
   String _searchQuery = "";
 
+  bool _sortByName = true;
+
   @override
   void initState() {
     super.initState();
@@ -111,6 +113,14 @@ class _AppointViewState extends State<AppointView> {
                 m.itsNumber.contains(_searchQuery);
           }).toList();
 
+          filteredMembers.sort((a, b) {
+            if (_sortByName) {
+              return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+            } else {
+              return a.itsNumber.compareTo(b.itsNumber);
+            }
+          });
+
           return Scaffold(
             appBar: AppBar(title: const Text("Appoint Members")),
             body: Column(
@@ -174,6 +184,32 @@ class _AppointViewState extends State<AppointView> {
                     ),
                   ),
                   const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      children: [
+                        const Text(
+                          "Sort by: ",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: const Text("Name"),
+                          selected: _sortByName,
+                          onSelected: (val) =>
+                              setState(() => _sortByName = true),
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: const Text("ITS"),
+                          selected: !_sortByName,
+                          onSelected: (val) =>
+                              setState(() => _sortByName = false),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   // List
                   Expanded(
                     child: ListView.builder(
@@ -232,8 +268,11 @@ class _AppointViewState extends State<AppointView> {
           .toList();
       final int newCount = newSelections.length;
 
-      // Only allow submission if there is at least one NEW member to save
-      final bool canSubmit = newCount > 0;
+      final currentState = context.read<AppointBloc>().state;
+      final bool isSubmitting = currentState is AppointBlocStateLoading;
+
+      // LOCK THE BUTTON IF SUBMITTING
+      final bool canSubmit = newCount > 0 && !isSubmitting;
 
       return Padding(
         padding: const EdgeInsets.all(16.0),
