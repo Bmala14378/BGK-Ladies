@@ -4,7 +4,11 @@
       "Bash(flutter pub *)",
       "Bash(dart analyze *)",
       "Bash(node \"C:\\\\Users\\\\Sensei Mala\\\\.claude\\\\skills\\\\impeccable\\\\scripts\\\\load-context.mjs\")",
-      "Bash(flutter analyze *)"
+      "Bash(flutter analyze *)",
+      "Bash(dir)",
+      "Bash(dir bgk_ladies\\\\ios)",
+      "Bash(findstr /C:\"cloud_firestore\" /C:\"firebase_core\" bgk_ladies\\\\pubspec.lock)",
+      "Bash(findstr /V \"dependency\")"
     ]
   }
 }
