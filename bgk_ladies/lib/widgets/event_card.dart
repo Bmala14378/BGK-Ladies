@@ -89,31 +89,41 @@ void _showEventSummarySheet(
               .where((a) => a.status == StatusEnum.absent)
               .length;
 
-          return Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  event.eventName,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    event.eventName,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const Divider(),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatItem("Appointed", total.toString(), Colors.blue),
-                    _buildStatItem("Present", present.toString(), Colors.green),
-                    _buildStatItem("Late", late.toString(), Colors.orange),
-                    _buildStatItem("Absent", absent.toString(), Colors.red),
-                  ],
-                ),
-                const SizedBox(height: 20),
-              ],
+                  const Divider(),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildStatItem(
+                        "Appointed",
+                        total.toString(),
+                        Colors.blue,
+                      ),
+                      _buildStatItem(
+                        "Present",
+                        present.toString(),
+                        Colors.green,
+                      ),
+                      _buildStatItem("Late", late.toString(), Colors.orange),
+                      _buildStatItem("Absent", absent.toString(), Colors.red),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           );
         },

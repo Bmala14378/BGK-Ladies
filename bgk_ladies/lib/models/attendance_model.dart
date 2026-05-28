@@ -4,6 +4,9 @@ import 'package:bgk_ladies/enums/status_enum.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AttendanceModel {
+  /// Set at read-time in getMemberHistory via the document path.
+  /// Not persisted to Firestore — do not add to toMap().
+  final String eventId;
   final DateTime dateTime;
   final String itsNumber;
   final String name;
@@ -13,6 +16,7 @@ class AttendanceModel {
   final StatusEnum status;
 
   AttendanceModel({
+    this.eventId = '',
     required this.dateTime,
     required this.itsNumber,
     required this.name,
@@ -22,7 +26,7 @@ class AttendanceModel {
     required this.markaz,
   });
 
-  factory AttendanceModel.fromMap(Map<String, dynamic> map) {
+  factory AttendanceModel.fromMap(Map<String, dynamic> map, {String eventId = ''}) {
     DateTime parsedDate = DateTime.now();
     var dateValue = map[Vars.dateTime_Var];
 
@@ -33,6 +37,7 @@ class AttendanceModel {
     }
 
     return AttendanceModel(
+      eventId: eventId,
       dateTime: parsedDate,
       itsNumber: map[Vars.itsNo_Var] ?? 0,
       name: map[Vars.name_Var] ?? "",

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub *)",
+      "Bash(dart analyze *)",
+      "Bash(node \"C:\\\\Users\\\\Sensei Mala\\\\.claude\\\\skills\\\\impeccable\\\\scripts\\\\load-context.mjs\")",
+      "Bash(flutter analyze *)"
+    ]
+  }
+}

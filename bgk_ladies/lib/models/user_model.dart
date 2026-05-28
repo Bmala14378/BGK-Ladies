@@ -59,4 +59,17 @@ class UserModel {
       role == UserRoleEnum.superUser ||
       role == UserRoleEnum.officer ||
       role == UserRoleEnum.headAdmin;
+
+  bool get canManageUsers =>
+      role == UserRoleEnum.superUser ||
+      role == UserRoleEnum.officer ||
+      role == UserRoleEnum.headAdmin;
+
+  bool get canManageMembers =>
+      role == UserRoleEnum.superUser ||
+      role == UserRoleEnum.officer ||
+      role == UserRoleEnum.headAdmin;
+
+  // Any role that manages members can edit remarks (all except onGroundAdmin)
+  bool get canEditRemarks => role != UserRoleEnum.onGroundAdmin;
 }

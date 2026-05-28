@@ -26,7 +26,6 @@ import 'package:bgk_ladies/services/member/member_service.dart';
 //Utilities
 import 'package:bgk_ladies/themes.dart';
 import 'package:bgk_ladies/utilites/dialog/loading_dialog.dart';
-import 'package:bgk_ladies/utilites/dialog/network_dialog.dart';
 import 'package:bgk_ladies/firebase_options.dart';
 
 //Views
@@ -34,8 +33,10 @@ import 'package:bgk_ladies/views/attend/event_management_view.dart';
 import 'package:bgk_ladies/views/auth/login_view.dart';
 import 'package:bgk_ladies/views/auth/register_view.dart';
 import 'package:bgk_ladies/views/dashboard_view.dart';
+import 'package:bgk_ladies/views/root_navigation_page.dart';
 
 //Packages
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +48,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // Enable Firestore offline persistence so the app works with cached data
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
+
   FlutterError.onError = (errorDetails) {
     FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
   };
@@ -57,51 +64,47 @@ void main() async {
   };
   await SentryFlutter.init(
     (options) {
-      options.dsn = 'https://c2b22ea24e44e017805149d8a2c109dd@o4511251023790080.ingest.us.sentry.io/4511251023986688';
-      // Adds request headers and IP for users, for more info visit:
-      // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/
+      options.dsn =
+          'https://c2b22ea24e44e017805149d8a2c109dd@o4511251023790080.ingest.us.sentry.io/4511251023986688';
       options.sendDefaultPii = true;
       options.enableLogs = true;
-      // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
-      // We recommend adjusting this value in production.
       options.tracesSampleRate = 1.0;
-      // The sampling rate for profiling is relative to tracesSampleRate
-      // Setting to 1.0 will profile 100% of sampled transactions:
-
       // ignore: experimental_member_use
       options.profilesSampleRate = 0.5;
-      // Configure Session Replay
       options.replay.sessionSampleRate = 0.1;
       options.replay.onErrorSampleRate = 1.0;
     },
-    appRunner: () => runApp(SentryWidget(child: 
-    MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (context) => NetworkBloc()),
-        BlocProvider(
-          create: (context) =>
-              AuthBlocFunc(AuthRepository(), MemberService())
-                ..add(const AuthBlocEventInitialize()),
+    appRunner: () => runApp(
+      SentryWidget(
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (context) => NetworkBloc()),
+            BlocProvider(
+              create: (context) =>
+                  AuthBlocFunc(AuthRepository(), MemberService())
+                    ..add(const AuthBlocEventInitialize()),
+            ),
+            BlocProvider(
+              create: (context) =>
+                  EventBloc(EventService())
+                    ..add(const EventBlocEventInitialize()),
+            ),
+            BlocProvider(create: (context) => MemberBloc(MemberService())),
+            BlocProvider(
+              create: (context) =>
+                  AppointBloc(AppointService(), EventService())
+                    ..add(const AppointBlocEventFetchActiveEvents()),
+            ),
+            BlocProvider(
+              create: (context) =>
+                  AttendBloc(AttendService(), EventService())
+                    ..add(const AttendBlocEventFetchActiveEvents()),
+            ),
+          ],
+          child: const MyApp(),
         ),
-        BlocProvider(
-          create: (context) =>
-              EventBloc(EventService())..add(const EventBlocEventInitialize()),
-        ),
-        BlocProvider(create: (context) => MemberBloc(MemberService())),
-        BlocProvider(
-          create: (context) =>
-              AppointBloc(AppointService(), EventService())
-                ..add(const AppointBlocEventFetchActiveEvents()),
-        ),
-        BlocProvider(
-          create: (context) =>
-              AttendBloc(AttendService(), EventService())
-                ..add(const AttendBlocEventFetchActiveEvents()),
-        ),
-      ],
-      child: const MyApp(),
+      ),
     ),
-  )),
   );
 }
 
@@ -118,10 +121,10 @@ class MyApp extends StatelessWidget {
       routes: {
         "/login": (context) => LoginView(),
         "/register": (context) => RegisterView(),
+        "/home": (context) => const RootNavigationPage(),
         "/dash": (context) => DashboardView(),
         "/eventmgmt": (context) => EventManagementView(),
       },
-      // The Builder here allows us to get a context under the BlocProviders
       home: UpgradeAlert(
         showIgnore: false,
         showLater: false,
@@ -134,12 +137,19 @@ class MyApp extends StatelessWidget {
         child: BlocListener<NetworkBloc, NetworkState>(
           listener: (context, state) {
             if (state.status == NetworkStatus.disconnected) {
-              showNoInternetDialog(context);
+              ScaffoldMessenger.of(context).showMaterialBanner(
+                MaterialBanner(
+                  backgroundColor: Colors.orange.shade700,
+                  leading: const Icon(Icons.wifi_off, color: Colors.white),
+                  content: const Text(
+                    'No internet — showing cached data',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  actions: const [SizedBox.shrink()],
+                ),
+              );
             } else {
-              // Automatically close the dialog when internet returns
-              if (Navigator.canPop(context)) {
-                Navigator.of(context, rootNavigator: true).pop();
-              }
+              ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
             }
           },
           child: const MainPg(),
@@ -218,7 +228,9 @@ class MainPg extends StatelessWidget {
           return RegisterView();
         } else if (state is AuthBlocStateLoggedIn ||
             state is AuthBlocStatesNavigatingToDash) {
-          return DashboardView();
+          // Route to RootNavigationPage — DashboardView inside it handles
+          // the onGroundAdmin bypass to AttendanceView automatically
+          return const RootNavigationPage();
         }
         return Center(child: Text("An Unexpected Error Occurred"));
       },

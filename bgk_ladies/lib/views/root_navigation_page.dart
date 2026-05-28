@@ -1,9 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
-
-// Your Views
-import 'package:bgk_ladies/views/dashboard_view.dart';
+import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
+import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
+import 'package:bgk_ladies/bloc/reports/reports_bloc_func.dart';
+import 'package:bgk_ladies/enums/user_role_enum.dart';
+import 'package:bgk_ladies/services/attend/attend_service.dart';
+import 'package:bgk_ladies/themes.dart';
 import 'package:bgk_ladies/views/auth/profile_view.dart';
+import 'package:bgk_ladies/views/dashboard_view.dart';
+import 'package:bgk_ladies/views/reports/reports_view.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class RootNavigationPage extends StatefulWidget {
   const RootNavigationPage({super.key});
@@ -13,46 +19,53 @@ class RootNavigationPage extends StatefulWidget {
 }
 
 class _RootNavigationPageState extends State<RootNavigationPage> {
-  // We manage the state with a single index:
-  // 0 = Dashboard (Home), 1 = Reports (Left Tab), 2 = Profile (Right Tab)
+  // 0 = Dashboard (Home), 1 = Reports, 2 = Profile
   int _selectedIndex = 0;
 
-  // The actual screens
-  final List<Widget> _views = [
+  late final List<Widget> _views = [
     const DashboardView(),
-    const Center(
-      child: Text("Reports View Coming Soon", style: TextStyle(fontSize: 18)),
+    BlocProvider<ReportsBloc>(
+      create: (_) => ReportsBloc(AttendService()),
+      child: const ReportsView(),
     ),
     const ProfileView(),
   ];
 
-  // The icons for the bottom nav bar (Left and Right of the notch)
+  // Icons either side of the center FAB notch
   final List<IconData> iconList = [
-    Icons.bar_chart_rounded, // Index 0 in the Nav Bar
-    Icons.person_outline_rounded, // Index 1 in the Nav Bar
+    Icons.bar_chart_rounded,     // Reports
+    Icons.person_outline_rounded, // Profile
   ];
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // onGroundAdmin goes directly to DashboardView (which internally shows
+    // AttendanceView). They have no access to Reports or Profile, so the
+    // bottom nav bar and FAB are hidden entirely.
+    final authState = context.read<AuthBlocFunc>().state;
+    final role = authState is AuthBlocStateLoggedIn
+        ? authState.user.role
+        : null;
+    final isOnGroundAdmin = role == UserRoleEnum.onGroundAdmin;
+
+    if (isOnGroundAdmin) {
+      return const Scaffold(body: DashboardView());
+    }
+
     return Scaffold(
-      // IndexedStack preserves the state of the pages when switching tabs
+      // IndexedStack preserves state when switching tabs
       body: IndexedStack(index: _selectedIndex, children: _views),
 
-      // The Center "Home" Button
+      // Center "Home" FAB
       floatingActionButton: FloatingActionButton(
-        shape:
-            const CircleBorder(), // Gives it a nice circular shape to fit the notch
+        shape: const CircleBorder(),
         backgroundColor: _selectedIndex == 0
-            ? Colors.blueAccent
+            ? AppTheme.primaryDark
             : Colors.grey.shade300,
-        elevation: _selectedIndex == 0
-            ? 4
-            : 0, // Flatten it slightly if not active
-        onPressed: () {
-          setState(() {
-            _selectedIndex = 0; // Switch to Dashboard
-          });
-        },
+        elevation: _selectedIndex == 0 ? 4 : 0,
+        onPressed: () => setState(() => _selectedIndex = 0),
         child: Icon(
           Icons.home_rounded,
           color: _selectedIndex == 0 ? Colors.white : Colors.grey.shade700,
@@ -61,31 +74,23 @@ class _RootNavigationPageState extends State<RootNavigationPage> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-      // The Animated Bottom Bar
       bottomNavigationBar: AnimatedBottomNavigationBar(
-        backgroundColor: const Color.fromARGB(
-          167,
-          225,
-          129,
-          241,
-        ).withAlpha(100),
+        backgroundColor: colorScheme.surface,
         icons: iconList,
-        // If Home (0) is selected, we fake the active index and just change the color to hide it
         activeIndex: _selectedIndex == 2 ? 1 : 0,
         gapLocation: GapLocation.center,
         notchSmoothness: NotchSmoothness.softEdge,
         leftCornerRadius: 20,
         rightCornerRadius: 20,
-
-        // Visual styling
-        activeColor: _selectedIndex == 0 ? Colors.grey[200] : Colors.blueAccent,
-        inactiveColor: Colors.grey[200],
+        activeColor: _selectedIndex == 0
+            ? Colors.grey.shade400
+            : colorScheme.primary,
+        inactiveColor: Colors.grey.shade400,
         iconSize: 28,
-
-        // Handle Tab Clicks
         onTap: (index) {
           setState(() {
-            // Map the Nav Bar index (0 or 1) to our View index (1 or 2)
+            // Nav bar index 0 → Reports (view index 1)
+            // Nav bar index 1 → Profile (view index 2)
             _selectedIndex = index == 0 ? 1 : 2;
           });
         },

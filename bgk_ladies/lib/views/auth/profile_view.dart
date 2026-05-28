@@ -5,7 +5,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_event.dart';
+import 'package:bgk_ladies/bloc/member/member_bloc_func.dart';
+import 'package:bgk_ladies/bloc/member/member_bloc_states.dart';
+import 'package:bgk_ladies/enums/markaz_enum.dart';
+import 'package:bgk_ladies/enums/user_role_enum.dart';
 import 'package:bgk_ladies/models/user_model.dart';
+import 'package:bgk_ladies/themes.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
@@ -25,8 +30,6 @@ class ProfileView extends StatelessWidget {
       },
       builder: (context, state) {
         UserModel? user;
-
-        // Grab the user from the state safely
         if (state is AuthBlocStateLoggedIn) user = state.user;
         if (state is AuthBlocStateError) user = state.currentUser;
 
@@ -38,19 +41,26 @@ class ProfileView extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(title: const Text("My Profile"), elevation: 0),
-          body: Padding(
+          body: SingleChildScrollView(
             padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Center(
+                Center(
                   child: CircleAvatar(
                     radius: 50,
-                    backgroundColor: Colors.blueAccent,
-                    child: Icon(Icons.person, size: 50, color: Colors.white),
+                    backgroundColor: AppTheme.primaryDark,
+                    child: const Icon(
+                      Icons.person,
+                      size: 50,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 30),
+
+                // --- Account Info ---
+                _buildSectionHeader("Account"),
                 _buildProfileItem(
                   Icons.badge,
                   "ITS Number",
@@ -60,16 +70,53 @@ class ProfileView extends StatelessWidget {
                 _buildProfileItem(
                   Icons.admin_panel_settings,
                   "Role",
-                  user.role.name.toUpperCase(),
+                  user.role.displayName,
                 ),
                 const Divider(),
                 _buildProfileItem(
                   Icons.location_on,
                   "Markaz",
-                  user.markaz?.name.toUpperCase() ?? "N/A",
+                  user.markaz?.displayName ?? "N/A",
                 ),
-                const SizedBox(height: 40),
 
+                // --- Member Info (from MemberBloc) ---
+                BlocBuilder<MemberBloc, MemberBlocState>(
+                  builder: (context, memberState) {
+                    if (memberState is LoadedMemberBlocState &&
+                        memberState.userProfile != null) {
+                      final profile = memberState.userProfile!;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 24),
+                          _buildSectionHeader("Member Details"),
+                          _buildProfileItem(
+                            Icons.person,
+                            "Full Name",
+                            profile.name,
+                          ),
+                          const Divider(),
+                          _buildProfileItem(
+                            Icons.group,
+                            "Group Leader",
+                            profile.glName.isNotEmpty ? profile.glName : "N/A",
+                          ),
+                          const Divider(),
+                          _buildProfileItem(
+                            Icons.home,
+                            "Mohalla",
+                            profile.mohalla.isNotEmpty
+                                ? profile.mohalla
+                                : "N/A",
+                          ),
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+
+                const SizedBox(height: 40),
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -88,6 +135,21 @@ class ProfileView extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryDark,
+          letterSpacing: 0.8,
+        ),
+      ),
     );
   }
 
@@ -123,10 +185,8 @@ class ProfileView extends StatelessWidget {
     final oldPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-
-    // We use a ValueNotifier to handle the spinner locally without triggering
-    // the global loading dialog in main.dart
     final isSubmitting = ValueNotifier<bool>(false);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     showDialog(
       context: context,
@@ -136,18 +196,14 @@ class ProfileView extends StatelessWidget {
           listener: (context, state) {
             if (state is AuthBlocStatePasswordChangeSuccess) {
               isSubmitting.value = false;
-              Navigator.pop(
-                dialogContext,
-              ); // Close dialog ONLY on actual success
-              ScaffoldMessenger.of(context).showSnackBar(
+              Navigator.pop(dialogContext);
+              scaffoldMessenger.showSnackBar(
                 const SnackBar(
                   content: Text("Password changed successfully"),
                   backgroundColor: Colors.green,
                 ),
               );
             } else if (state is AuthBlocStateError) {
-              // Stop the spinner so they can try again.
-              // The red snackbar is already handled by the main listener at the top of ProfileView!
               isSubmitting.value = false;
             }
           },
@@ -196,9 +252,7 @@ class ProfileView extends StatelessWidget {
                     onPressed: submitting
                         ? null
                         : () {
-                            isSubmitting.value = true; // Start spinner
-
-                            // Dispatch the event
+                            isSubmitting.value = true;
                             context.read<AuthBlocFunc>().add(
                               AuthBlocEventChangePassword(
                                 oldPassword: oldPasswordController.text,

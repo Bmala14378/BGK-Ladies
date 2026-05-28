@@ -35,7 +35,7 @@ class MemberModel {
       Vars.name_Var: name,
       Vars.glName_Var: glName,
       Vars.mohalla_Var: mohalla,
-      Vars.markaz_Var: markaz,
+      Vars.markaz_Var: markaz.name, // store as string, not enum object
       Vars.remarks_Var: remarks,
     };
   }

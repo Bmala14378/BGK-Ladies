@@ -274,44 +274,48 @@ class _AppointViewState extends State<AppointView> {
       // LOCK THE BUTTON IF SUBMITTING
       final bool canSubmit = newCount > 0 && !isSubmitting;
 
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size.fromHeight(50),
-            backgroundColor: canSubmit ? Colors.blue : Colors.grey[300],
-          ),
-          onPressed: canSubmit
-              ? () {
-                  final membersToAppoint = widget.members
-                      .where((m) => newSelections.contains(m.itsNumber))
-                      .map(
-                        (m) => AttendanceModel(
-                          name: m.name,
-                          itsNumber: m.itsNumber,
-                          glName: m.glName,
-                          mohalla: m.mohalla,
-                          markaz: m.markaz,
-                          status: StatusEnum.appointed,
-                          dateTime: DateTime.now(),
-                        ),
-                      )
-                      .toList();
+      return SafeArea(
+        bottom: true,
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              backgroundColor: canSubmit ? Colors.blue : Colors.grey[300],
+            ),
+            onPressed: canSubmit
+                ? () {
+                    final membersToAppoint = widget.members
+                        .where((m) => newSelections.contains(m.itsNumber))
+                        .map(
+                          (m) => AttendanceModel(
+                            name: m.name,
+                            itsNumber: m.itsNumber,
+                            glName: m.glName,
+                            mohalla: m.mohalla,
+                            markaz: m.markaz,
+                            status: StatusEnum.appointed,
+                            dateTime: DateTime.now(),
+                          ),
+                        )
+                        .toList();
 
-                  context.read<AppointBloc>().add(
-                    AppointBlocEventSubmitAppointment(
-                      eventId: currentEventId,
-                      selectedMembers: membersToAppoint,
-                    ),
-                  );
-                }
-              : null,
-          child: Text(
-            newCount == 0
-                ? "No New Members Selected"
-                : "Appoint $newCount New Members",
-            style: TextStyle(
-              color: canSubmit ? Colors.white : Colors.grey[600],
+                    context.read<AppointBloc>().add(
+                      AppointBlocEventSubmitAppointment(
+                        eventId: currentEventId,
+                        selectedMembers: membersToAppoint,
+                      ),
+                    );
+                  }
+                : null,
+            child: Text(
+              newCount == 0
+                  ? "No New Members Selected"
+                  : "Appoint $newCount New Members",
+              style: TextStyle(
+                color: canSubmit ? Colors.white : Colors.grey[600],
+              ),
             ),
           ),
         ),

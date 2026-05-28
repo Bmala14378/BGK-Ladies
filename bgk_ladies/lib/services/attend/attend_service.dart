@@ -17,7 +17,6 @@ class AttendService {
     return _repo.getAttendanceStream(eventId: eventId, markaz: markaz);
   }
 
-  // For individual status toggles if needed
   Future<void> submitAttendance({
     required String eventId,
     required String itsNumbers,
@@ -30,11 +29,22 @@ class AttendService {
     );
   }
 
-  // NEW: Service method for batch submission
   Future<void> submitBatchAttendance({
     required String eventId,
     required Map<String, StatusEnum> updates,
   }) async {
     await _repo.submitBatchAttendance(eventId: eventId, updates: updates);
+  }
+
+  /// Fetches the attendance history of a single member across the supplied
+  /// [allEventIds] using direct document reads (no Firestore index needed).
+  Future<List<AttendanceModel>> getMemberHistory({
+    required String itsNumber,
+    required List<String> allEventIds,
+  }) async {
+    return await _repo.getMemberHistory(
+      itsNumber: itsNumber,
+      allEventIds: allEventIds,
+    );
   }
 }

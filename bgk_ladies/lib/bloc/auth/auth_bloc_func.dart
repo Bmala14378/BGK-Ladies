@@ -40,6 +40,7 @@ class AuthBlocFunc extends Bloc<AuthBlocEvent, AuthBlocState> {
           itsNumber: event.itsNumber,
           password: event.password,
         );
+        _currentUser = user;
         devtools.log("user logged in");
         emit(
           AuthBlocStateLoggedIn(

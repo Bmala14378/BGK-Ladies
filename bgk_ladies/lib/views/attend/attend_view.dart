@@ -61,27 +61,29 @@ class _AttendanceViewState extends State<AttendanceView> {
         return Scaffold(
           // 3. ADD: Submit Button
           floatingActionButton: _pendingUpdates.isNotEmpty
-              ? FloatingActionButton.extended(
-                  backgroundColor: Colors.purple[800],
-                  onPressed: state is AttendBlocStateSubmitting
-                      ? null
-                      : () {
-                          final state = context.read<AttendBloc>().state;
-                          if (state is AttendBlocStateLoaded) {
-                            context.read<AttendBloc>().add(
-                              AttendBlocEventSubmitBatch(
-                                eventId: state.eventId,
-                                attendanceUpdates: _pendingUpdates,
-                              ),
-                            );
-                          }
-                        },
-                  icon: const Icon(Icons.cloud_upload, color: Colors.white),
-                  label: Text(
-                    "Save ${_pendingUpdates.length} Changes",
-                    style: const TextStyle(color: Colors.white),
+              ? SafeArea(
+                child: FloatingActionButton.extended(
+                    backgroundColor: Colors.purple[800],
+                    onPressed: state is AttendBlocStateSubmitting
+                        ? null
+                        : () {
+                            final state = context.read<AttendBloc>().state;
+                            if (state is AttendBlocStateLoaded) {
+                              context.read<AttendBloc>().add(
+                                AttendBlocEventSubmitBatch(
+                                  eventId: state.eventId,
+                                  attendanceUpdates: _pendingUpdates,
+                                ),
+                              );
+                            }
+                          },
+                    icon: const Icon(Icons.cloud_upload, color: Colors.white),
+                    label: Text(
+                      "Save ${_pendingUpdates.length} Changes",
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
-                )
+              )
               : null,
           // 2. CHANGE: BlocBuilder to BlocConsumer for listener support
           body: BlocConsumer<AttendBloc, AttendBlocState>(

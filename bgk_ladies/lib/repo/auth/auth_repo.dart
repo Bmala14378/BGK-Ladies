@@ -12,6 +12,8 @@ class AuthRepository {
   UserModel? _cachedUser;
   UserModel? get cachedUser => _cachedUser;
 
+  // ── Auth ──────────────────────────────────────────────────────────────────
+
   Future<UserModel?> login({
     required int itsNumber,
     required String password,
@@ -95,28 +97,53 @@ class AuthRepository {
   }) async {
     if (_cachedUser == null) throw Exception("No user currently logged in.");
 
-    // 1. Verify old password
     String oldHash = hashPassword(oldPassword);
     if (_cachedUser!.passwordHash != oldHash) {
       throw Exception("Incorrect current password.");
     }
 
-    // 2. Hash new password and update Firestore
     String newHash = hashPassword(newPassword);
     await _db
         .collection(Vars.userCollection_Var)
         .doc(_cachedUser!.itsNumber.toString())
         .update({Vars.passwordHash_Var: newHash});
 
-    // 3. Update the cached user in memory so they don't have to log in again
-    // Note: Depending on your UserModel, you might need to recreate the object
-    // if your fields are 'final', or just update it if they are mutable.
     _cachedUser = UserModel(
       itsNumber: _cachedUser!.itsNumber,
       passwordHash: newHash,
       role: _cachedUser!.role,
       markaz: _cachedUser!.markaz,
-      // Add any other fields your UserModel has (e.g., name)
     );
+  }
+
+  // ── Admin: User Management ────────────────────────────────────────────────
+
+  /// Streams the entire Users collection. Used by User Management screen.
+  Stream<List<UserModel>> getAllUsers() {
+    return _db.collection(Vars.userCollection_Var).snapshots().map(
+      (snapshot) => snapshot.docs
+          .map((doc) => UserModel.fromMap(doc.data()))
+          .toList(),
+    );
+  }
+
+  /// Resets the password for any user to their ITS number (as a string).
+  /// Only callable by admins — does NOT require knowing the current password.
+  Future<void> resetUserPassword(int itsNumber) async {
+    final newHash = hashPassword(itsNumber.toString());
+    await _db
+        .collection(Vars.userCollection_Var)
+        .doc(itsNumber.toString())
+        .update({Vars.passwordHash_Var: newHash});
+    devtools.log("Password reset for ITS $itsNumber");
+  }
+
+  /// Deletes a user account from the Users collection.
+  Future<void> deleteUser(int itsNumber) async {
+    await _db
+        .collection(Vars.userCollection_Var)
+        .doc(itsNumber.toString())
+        .delete();
+    devtools.log("User deleted: ITS $itsNumber");
   }
 }

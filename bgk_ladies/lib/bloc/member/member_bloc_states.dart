@@ -25,3 +25,15 @@ class MemberStateError extends MemberBlocState {
   final String errorMessage;
   const MemberStateError(this.errorMessage) : super(isLoading: false);
 }
+
+/// Emitted after a successful remarks update so listeners can show a SnackBar.
+class MemberStateRemarksUpdated extends MemberBlocState {
+  const MemberStateRemarksUpdated() : super(isLoading: false);
+}
+
+/// Emitted after a successful add or update operation.
+class MemberStateOperationSuccess extends MemberBlocState {
+  final String message;
+  const MemberStateOperationSuccess({required this.message})
+    : super(isLoading: false);
+}
