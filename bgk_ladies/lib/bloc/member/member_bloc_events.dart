@@ -26,6 +26,11 @@ class MemberBlocEventUpdateMember extends MemberBlocEvent {
   const MemberBlocEventUpdateMember({required this.member});
 }
 
+class MemberBlocEventDeleteMember extends MemberBlocEvent {
+  final String itsNumber;
+  const MemberBlocEventDeleteMember({required this.itsNumber});
+}
+
 class MemberBlocEventUpdateRemarks extends MemberBlocEvent {
   final String itsNumber;
   final String remarks;

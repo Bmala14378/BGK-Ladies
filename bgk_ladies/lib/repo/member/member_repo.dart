@@ -98,6 +98,17 @@ class MemberRepository {
     }
   }
 
+  /// Permanently removes a member document. Attendance records under
+  /// Events/{eventId}/Attendance/{itsNumber} are not touched.
+  Future<void> deleteMember({required String itsNumber}) async {
+    try {
+      await _memberCollection.doc(itsNumber).delete();
+    } catch (e) {
+      devtools.log("Error deleting member: $e");
+      throw Exception("Failed to delete member");
+    }
+  }
+
   /// Updates only the remarks field for a member.
   Future<void> updateMemberRemarks({
     required String itsNumber,

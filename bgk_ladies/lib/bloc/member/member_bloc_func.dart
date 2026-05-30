@@ -91,6 +91,20 @@ class MemberBloc extends Bloc<MemberBlocEvent, MemberBlocState> {
       }
     });
 
+    // ── Delete Member ─────────────────────────────────────────────────────────
+    on<MemberBlocEventDeleteMember>((event, emit) async {
+      try {
+        await _memberService.deleteMember(itsNumber: event.itsNumber);
+        emit(
+          const MemberStateOperationSuccess(
+            message: "Member deleted successfully",
+          ),
+        );
+      } catch (e) {
+        emit(MemberStateError(e.toString()));
+      }
+    });
+
     // ── Update Remarks ────────────────────────────────────────────────────────
     on<MemberBlocEventUpdateRemarks>((event, emit) async {
       try {

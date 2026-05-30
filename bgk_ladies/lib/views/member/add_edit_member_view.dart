@@ -117,14 +117,52 @@ class _AddEditMemberViewState extends State<AddEditMemberView> {
                 ),
                 const SizedBox(height: 16),
 
-                // ── GL Name ────────────────────────────────────────────────
-                TextFormField(
-                  controller: _glNameController,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: "Group Leader Name",
-                    prefixIcon: Icon(Icons.group_outlined),
-                  ),
+                // ── GL Name (autocomplete — pick existing or type new) ─────
+                Builder(
+                  builder: (context) {
+                    final memberState = context.watch<MemberBloc>().state;
+                    final knownGls = memberState is LoadedMemberBlocState
+                        ? (memberState.members
+                              .map((m) => m.glName)
+                              .where((g) => g.isNotEmpty)
+                              .toSet()
+                              .toList()
+                          ..sort())
+                        : <String>[];
+                    return Autocomplete<String>(
+                      initialValue: TextEditingValue(text: _glNameController.text),
+                      optionsBuilder: (textValue) {
+                        final q = textValue.text.trim().toLowerCase();
+                        if (q.isEmpty) return knownGls;
+                        return knownGls.where(
+                          (g) => g.toLowerCase().contains(q),
+                        );
+                      },
+                      onSelected: (val) => _glNameController.text = val,
+                      fieldViewBuilder:
+                          (context, ctrl, focusNode, onSubmitted) {
+                            // Keep ctrl (Autocomplete's internal) and our
+                            // _glNameController in sync so submit uses the
+                            // latest typed value.
+                            ctrl.addListener(() {
+                              if (_glNameController.text != ctrl.text) {
+                                _glNameController.text = ctrl.text;
+                              }
+                            });
+                            return TextFormField(
+                              controller: ctrl,
+                              focusNode: focusNode,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: const InputDecoration(
+                                labelText: "Group Leader Name",
+                                prefixIcon: Icon(Icons.group_outlined),
+                                helperText:
+                                    "Pick from list or type a new GL name",
+                              ),
+                            );
+                          },
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
 

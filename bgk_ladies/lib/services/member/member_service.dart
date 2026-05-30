@@ -77,6 +77,10 @@ class MemberService {
     await repo.updateMember(member);
   }
 
+  Future<void> deleteMember({required String itsNumber}) async {
+    await repo.deleteMember(itsNumber: itsNumber);
+  }
+
   Future<void> updateMemberRemarks({
     required String itsNumber,
     required String remarks,

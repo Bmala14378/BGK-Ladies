@@ -4,6 +4,7 @@ import 'package:bgk_ladies/bloc/auth/auth_bloc_func.dart';
 import 'package:bgk_ladies/bloc/auth/auth_bloc_states.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_func.dart';
 import 'package:bgk_ladies/bloc/event/event_bloc_state.dart';
+import 'package:bgk_ladies/bloc/member/member_bloc_events.dart';
 import 'package:bgk_ladies/bloc/member/member_bloc_func.dart';
 import 'package:bgk_ladies/bloc/member/member_bloc_states.dart';
 import 'package:bgk_ladies/bloc/reports/reports_bloc_events.dart';
@@ -109,6 +110,7 @@ class _EventReportTabState extends State<_EventReportTab> {
   String? _selectedEventId;
   final TextEditingController _nameFilterCtrl = TextEditingController();
   StatusEnum? _selectedStatus;
+  String? _selectedGl;
 
   @override
   void dispose() {
@@ -120,6 +122,7 @@ class _EventReportTabState extends State<_EventReportTab> {
     setState(() {
       _selectedEventId = eventId;
       _selectedStatus = null;
+      _selectedGl = null;
       _nameFilterCtrl.clear();
     });
     final memberState = context.read<MemberBloc>().state;
@@ -140,6 +143,7 @@ class _EventReportTabState extends State<_EventReportTab> {
         nameFilter:
             _nameFilterCtrl.text.isEmpty ? null : _nameFilterCtrl.text,
         statusFilter: _selectedStatus,
+        glFilter: _selectedGl,
       ),
     );
   }
@@ -160,6 +164,7 @@ class _EventReportTabState extends State<_EventReportTab> {
               return DropdownButtonFormField<String>(
                 // ignore: deprecated_member_use
                 value: _selectedEventId,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Select Event',
                   prefixIcon: Icon(Icons.event),
@@ -169,7 +174,10 @@ class _EventReportTabState extends State<_EventReportTab> {
                     .map(
                       (e) => DropdownMenuItem<String>(
                         value: e.eventId as String,
-                        child: Text(e.eventName as String),
+                        child: Text(
+                          e.eventName as String,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     )
                     .toList(),
@@ -358,6 +366,44 @@ class _EventReportTabState extends State<_EventReportTab> {
                     )
                   : null,
             ),
+          ),
+          const SizedBox(height: 8),
+          // ── GL filter dropdown ──────────────────────────────────────────
+          Builder(
+            builder: (_) {
+              final gls = all
+                  .map((a) => a.glName)
+                  .where((g) => g.isNotEmpty)
+                  .toSet()
+                  .toList()
+                ..sort();
+              if (gls.isEmpty) return const SizedBox.shrink();
+              return DropdownButtonFormField<String?>(
+                // ignore: deprecated_member_use
+                value: _selectedGl,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Group Leader',
+                  prefixIcon: Icon(Icons.group_outlined),
+                ),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('All Group Leaders'),
+                  ),
+                  ...gls.map(
+                    (g) => DropdownMenuItem<String?>(
+                      value: g,
+                      child: Text(g, overflow: TextOverflow.ellipsis),
+                    ),
+                  ),
+                ],
+                onChanged: (val) {
+                  setState(() => _selectedGl = val);
+                  _applyFilter();
+                },
+              );
+            },
           ),
           const SizedBox(height: 8),
           SingleChildScrollView(
@@ -724,6 +770,7 @@ class _MemberListTab extends StatefulWidget {
 class _MemberListTabState extends State<_MemberListTab> {
   final TextEditingController _searchCtrl = TextEditingController();
   MarkazEnum? _markazFilter;
+  String? _glFilter;
 
   @override
   void dispose() {
@@ -747,18 +794,69 @@ class _MemberListTabState extends State<_MemberListTab> {
     if (_markazFilter != null) {
       result = result.where((m) => m.markaz == _markazFilter).toList();
     }
+    if (_glFilter != null && _glFilter!.isNotEmpty) {
+      result = result.where((m) => m.glName == _glFilter).toList();
+    }
     return result;
+  }
+
+  Future<void> _confirmDelete(BuildContext context, MemberModel member) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Member'),
+        content: Text(
+          'Are you sure you want to permanently delete ${member.name} '
+          '(${member.itsNumber})? This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (!context.mounted) return;
+    context.read<MemberBloc>().add(
+      MemberBlocEventDeleteMember(itsNumber: member.itsNumber),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final canManage = widget.currentUser?.canManageMembers ?? false;
 
-    return BlocBuilder<MemberBloc, MemberBlocState>(
+    return BlocConsumer<MemberBloc, MemberBlocState>(
       // Don't re-render for transient operation states
       buildWhen: (_, curr) =>
           curr is! MemberStateRemarksUpdated &&
           curr is! MemberStateOperationSuccess,
+      listenWhen: (_, curr) =>
+          curr is MemberStateOperationSuccess || curr is MemberStateError,
+      listener: (ctx, s) {
+        if (s is MemberStateOperationSuccess) {
+          ScaffoldMessenger.of(ctx).showSnackBar(
+            SnackBar(
+              content: Text(s.message),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else if (s is MemberStateError) {
+          ScaffoldMessenger.of(ctx).showSnackBar(
+            SnackBar(
+              content: Text(s.errorMessage),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
       builder: (context, state) {
         if (state is! LoadedMemberBlocState) {
           return Center(child: buildLoadingDialog(context));
@@ -821,20 +919,77 @@ class _MemberListTabState extends State<_MemberListTab> {
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
+
+              // ── Group Leader filter dropdown ───────────────────────────
+              Builder(
+                builder: (_) {
+                  final gls = state.members
+                      .map((m) => m.glName)
+                      .where((g) => g.isNotEmpty)
+                      .toSet()
+                      .toList()
+                    ..sort();
+                  if (gls.isEmpty) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: DropdownButtonFormField<String?>(
+                      // ignore: deprecated_member_use
+                      value: _glFilter,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Group Leader',
+                        prefixIcon: Icon(Icons.group_outlined),
+                        isDense: true,
+                      ),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('All Group Leaders'),
+                        ),
+                        ...gls.map(
+                          (g) => DropdownMenuItem<String?>(
+                            value: g,
+                            child: Text(g, overflow: TextOverflow.ellipsis),
+                          ),
+                        ),
+                      ],
+                      onChanged: (val) => setState(() => _glFilter = val),
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 4),
 
-              // ── Count label ────────────────────────────────────────────
+              // ── Count label + Export ───────────────────────────────────
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 4,
                 ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '${filtered.length} member${filtered.length == 1 ? '' : 's'}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                  ),
+                child: Row(
+                  children: [
+                    Text(
+                      '${filtered.length} member${filtered.length == 1 ? '' : 's'}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (filtered.isNotEmpty)
+                      TextButton.icon(
+                        icon: const Icon(Icons.download_outlined, size: 18),
+                        label: const Text('Export CSV'),
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: () => exportMembersToCsv(
+                          members: filtered,
+                          fileName: 'Members_List',
+                        ),
+                      ),
+                  ],
                 ),
               ),
 
@@ -849,8 +1004,11 @@ class _MemberListTabState extends State<_MemberListTab> {
                       )
                     : ListView.builder(
                         itemCount: filtered.length,
-                        itemBuilder: (context, index) =>
-                            _buildMemberTile(context, filtered[index]),
+                        itemBuilder: (context, index) => _buildMemberTile(
+                          context,
+                          filtered[index],
+                          canManage,
+                        ),
                       ),
               ),
             ],
@@ -873,7 +1031,11 @@ class _MemberListTabState extends State<_MemberListTab> {
     );
   }
 
-  Widget _buildMemberTile(BuildContext context, MemberModel member) {
+  Widget _buildMemberTile(
+    BuildContext context,
+    MemberModel member,
+    bool canManage,
+  ) {
     return Card(
       child: ListTile(
         onTap: () => Navigator.push(
@@ -960,7 +1122,48 @@ class _MemberListTabState extends State<_MemberListTab> {
           ],
         ),
         isThreeLine: true,
-        trailing: Icon(Icons.chevron_right, color: Colors.grey.shade400),
+        trailing: canManage
+            ? PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert, color: Colors.grey.shade500),
+                tooltip: 'Member actions',
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            AddEditMemberView(existingMember: member),
+                      ),
+                    );
+                  } else if (value == 'delete') {
+                    _confirmDelete(context, member);
+                  }
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.edit_outlined),
+                      title: Text('Edit'),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.delete_outline, color: Colors.red),
+                      title: Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Icon(Icons.chevron_right, color: Colors.grey.shade400),
       ),
     );
   }
